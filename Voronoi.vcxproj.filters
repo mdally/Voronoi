@@ -18,6 +18,12 @@
     <ClInclude Include="src\Voronoi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\BeachLine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\EventQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\DCEL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -27,6 +33,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EventQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BeachLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

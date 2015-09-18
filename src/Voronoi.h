@@ -2,57 +2,35 @@
 #define _VORONOI_H_
 
 #include "DCEL.h"
+#include "BeachLine.h"
+#include "EventQueue.h"
 
 #include <vector>
 #include <queue>
 
 class Voronoi{
 public:
-	std::vector<Vertex> vertices;
-	std::vector<HalfEdge> edges;
 	std::vector<Site> sites;
+	std::vector<Vertex> vertices;
+	std::vector<HalfEdge*> edges;
 
 	Voronoi();
+	void setBounds(int bottomX, int topX, int leftY, int rightY);
 	void compute();
 	void relax();
 private:
-	int boxMinX, boxMaxX, boxMinY, boxMaxY;
+	int minX, maxX, minY, maxY;
+	bool boundsSet;
 
-	struct beachLineNode{
-		Site* s1;
-		Site* s2;
-
-		beachLineNode* left;
-		beachLineNode* right;
-	};
-
-	enum eventType { SITE, CIRCLE };
-	struct event{
-		eventType type;
-		Site* site;
-		beachLineNode* node;
-		bool falseAlarm;
-	};
-
-	class compareEvents{
-	public:
-		bool operator()(event* e1, event* e2){
-			Point& p1 = (e1->type == SITE) ? e1->site->p : e1->node->s1->p;
-			Point& p2 = (e2->type == SITE) ? e2->site->p : e2->node->s1->p;
-
-			if (p1.y < p2.y) return true;
-			if (p1.y == p2.y && p1.x > p2.x) return true;
-			return false;
-		}
-	};
-
-	beachLineNode* beachLine;
-	std::vector<event> events;
-	std::priority_queue<event*, std::vector<event*>, compareEvents> eventQueue;
+	EventQueue eventQueue;
+	BeachLine beachLine;
 
 	void processSiteEvent(event* e);
 	void processCircleEvent(event* e);
-	void addArcToBeachLine(Site* s);
+
+	void checkArcTriplet(nodeTriplet& sites);
+	bool breakPointsConverge(nodeTriplet& sites);
+	Point circumcenter(nodeTriplet& sites);
 };
 
 #endif

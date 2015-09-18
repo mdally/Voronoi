@@ -1,6 +1,7 @@
 #ifndef _DCEL_H_
 #define _DCEL_H_
 
+//forward declarations
 struct HalfEdge;
 struct Site;
 
