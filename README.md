@@ -1,2 +1,2 @@
 # Voronoi
-C++ library for computing and working with voronoi diagrams
+C++ implementation of Fortune's Algorithm for computing Voronoi diagrams
