@@ -27,29 +27,21 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 			lowerFirst = false;
 		}
 
-		//get the 2 intersections for this breakpoint. Pick either left of right based on stuff above
+		//TODO: get 2 intersections for this breakpoint. Picker either left of right base on stuff above
 		//move to either left or right child depending on where new site is in relation to breakpoint
+		//repeat
 		Point intersect1, intersect2;
 		findParabolaIntersections(*p1, *p2, s->p.y, intersect1, intersect2);
 
-		Point* left;
-		Point* right;
-
-		if (intersect1.x < intersect2.x){
-			left = &intersect1;
-			right = &intersect2;
+		Point* compare;
+		if (intersect1.x < lower->x){
+			if (lowerFirst) compare = &intersect2;
+			else compare = &intersect1;
 		}
 		else{
-			left = &intersect2;
-			right = &intersect1;
+			if (lowerFirst) compare = &intersect1;
+			else compare = &intersect2;
 		}
-
-		Point* compare;
-		if (lowerFirst) compare = right;
-		else compare = left;
-		
-		if (s->p.x > compare->x) arc = arc->right;
-		else arc = arc->left;
 	}
 
 	return arc;
@@ -117,6 +109,14 @@ nodeTriplet BeachLine::leftTriplet(beachLineNode* n){
 	triplet.n2 = nextArc(n);
 	triplet.n3 = nextArc(triplet.n2);
 
+	if (triplet.n2 == nullptr){
+		triplet.n1 = nullptr;
+	}
+	if (triplet.n3 == nullptr){
+		triplet.n1 = nullptr;
+		triplet.n2 = nullptr;
+	}
+
 	return triplet;
 }
 
@@ -125,6 +125,14 @@ nodeTriplet BeachLine::rightTriplet(beachLineNode* n){
 	triplet.n1 = n;
 	triplet.n2 = prevArc(n);
 	triplet.n3 = prevArc(triplet.n2);
+
+	if (triplet.n2 == nullptr){
+		triplet.n1 = nullptr;
+	}
+	if (triplet.n3 = nullptr){
+		triplet.n1 = nullptr;
+		triplet.n2 = nullptr;
+	}
 
 	return triplet;
 }

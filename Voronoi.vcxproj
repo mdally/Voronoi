@@ -64,14 +64,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\BeachLine.h" />
-    <ClInclude Include="src\EventQueue.h" />
     <ClInclude Include="src\DCEL.h" />
     <ClInclude Include="src\Voronoi.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BeachLine.cpp" />
-    <ClCompile Include="src\EventQueue.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\Voronoi.cpp" />
   </ItemGroup>

@@ -37,7 +37,7 @@ void Voronoi::setBounds(int bottomX, int topX, int leftY, int rightY){
 void Voronoi::compute(){
 	//add all sites to event queue
 	//figure out bounding box if necessary
-	int xLo, xHi, yLo, yHi;
+	double xLo, xHi, yLo, yHi;
 	xLo = sites[0].p.x - 1;
 	xHi = sites[0].p.x + 1;
 	yLo = sites[0].p.y - 1;
@@ -53,7 +53,7 @@ void Voronoi::compute(){
 		e->falseAlarm = false;
 		e->y = s.p.y;
 
-		eventQueue.add(e);
+		eventQueue.push(e);
 
 		if (!boundsSet){
 			if (s.p.x <= xLo) xLo = s.p.x - 1;
@@ -64,11 +64,12 @@ void Voronoi::compute(){
 		}
 	}
 
-	if (!boundsSet) setBounds(xLo, xHi, yLo, yHi);
+	if (!boundsSet) setBounds((int)floor(xLo), (int)ceil(xHi), (int)floor(yLo), (int)ceil(yHi));
 
 	//process event queue
 	while (!eventQueue.empty()){
-		event* e = eventQueue.pop();
+		event* e = eventQueue.top();
+		eventQueue.pop();
 		currentSweeplineY = e->y;
 
 		if (!e->falseAlarm){
@@ -189,23 +190,25 @@ void Voronoi::processSiteEvent(event* e){
 }
 
 void Voronoi::checkArcTripletForCircleEvent(nodeTriplet& sites){
-	if (breakPointsConverge(sites)){
-		event* e = new event();
-		e->type = CIRCLE;
-		e->sites[0] = sites.n1->s1;
-		e->sites[1] = sites.n2->s1;
-		e->sites[2] = sites.n3->s1;
-		e->disappearingArc = sites.n2;
-		e->circleCenter = circumcenter(sites);
-		e->falseAlarm = false;
-		e->y = e->circleCenter.y - dist(e->sites[0]->p, e->circleCenter);
+	if (sites.n1 && sites.n2 && sites.n3){
+		if (breakPointsConverge(sites)){
+			event* e = new event();
+			e->type = CIRCLE;
+			e->sites[0] = sites.n1->s1;
+			e->sites[1] = sites.n2->s1;
+			e->sites[2] = sites.n3->s1;
+			e->disappearingArc = sites.n2;
+			e->circleCenter = circumcenter(sites);
+			e->falseAlarm = false;
+			e->y = e->circleCenter.y - dist(e->sites[0]->p, e->circleCenter);
 
-		if (e->y < currentSweeplineY){
-			eventQueue.add(e);
-			sites.n2->circleEvent = e;
-		}
-		else{
-			delete e;
+			if (e->y < currentSweeplineY){
+				eventQueue.push(e);
+				sites.n2->circleEvent = e;
+			}
+			else{
+				delete e;
+			}
 		}
 	}
 }
@@ -245,7 +248,7 @@ inline Point Voronoi::circumcenter(nodeTriplet& sites){
 	return center;
 }
 
-inline void Voronoi::findParabolaIntersections(Point& focus1, Point& focus2, double directrixHeight,
+inline void findParabolaIntersections(Point& focus1, Point& focus2, double directrixHeight,
 	Point& intersection1, Point& intersection2){
 
 	double bmc1 = focus1.y - directrixHeight;
@@ -388,6 +391,7 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 	Point p2 = breakpoint->s2->p;
 	Point c = circleCenter->p;
 
+	//TODO - sweepline height doesnt need to be recalculated
 	double radius = dist(p1, c);
 	double sweeplineHeight = c.y - radius;
 
