@@ -1,8 +1,9 @@
 #ifndef _BEACH_LINE_H_
 #define _BEACH_LINE_H_
 
+#include "DCEL.h"
+
 //forward declarations
-struct Site;
 struct event;
 
 struct beachLineNode{
@@ -14,6 +15,7 @@ struct beachLineNode{
 	beachLineNode* right;
 
 	event* circleEvent;
+	HalfEdge* edge;
 };
 
 struct nodeTriplet{
@@ -34,8 +36,12 @@ public:
 	void addArc(Site* s, bool siteAtMaxY);
 
 	beachLineNode* arcAbove(Site* s);
+
 	beachLineNode* predecessor(beachLineNode* n);
 	beachLineNode* successor(beachLineNode* n);
+
+	beachLineNode* prevArc(beachLineNode* n);
+	beachLineNode* nextArc(beachLineNode* n);
 
 	nodeTriplet leftTriplet(beachLineNode* n);
 	nodeTriplet rightTriplet(beachLineNode* n);

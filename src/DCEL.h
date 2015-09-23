@@ -1,6 +1,9 @@
 #ifndef _DCEL_H_
 #define _DCEL_H_
 
+//TODO: get better point and vector classes
+//TODO: change DCEL to class to provide constructors
+
 //forward declarations
 struct HalfEdge;
 struct Site;
