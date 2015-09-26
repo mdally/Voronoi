@@ -12,8 +12,8 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 	beachLineNode* arc = root;
 
 	while (arc->s2 != nullptr){
-		Point* p1 = &(root->s1->p);
-		Point* p2 = &(root->s2->p);
+		Point* p1 = &(arc->s1->p);
+		Point* p2 = &(arc->s2->p);
 
 		Point* lower;
 		bool lowerFirst;
@@ -45,11 +45,19 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 		}
 
 		Point* compare;
-		if (lowerFirst) compare = right;
-		else compare = left;
+		if (lowerFirst){
+			compare = right;
+		}
+		else{
+			compare = left;
+		}
 		
-		if (s->p.x > compare->x) arc = arc->right;
-		else arc = arc->left;
+		if (s->p.x > compare->x){
+			arc = arc->right;
+		}
+		else{
+			arc = arc->left;
+		}
 	}
 
 	return arc;
@@ -122,9 +130,9 @@ nodeTriplet BeachLine::leftTriplet(beachLineNode* n){
 
 nodeTriplet BeachLine::rightTriplet(beachLineNode* n){
 	nodeTriplet triplet;
-	triplet.n1 = n;
+	triplet.n3 = n;
 	triplet.n2 = prevArc(n);
-	triplet.n3 = prevArc(triplet.n2);
+	triplet.n1 = prevArc(triplet.n2);
 
 	return triplet;
 }

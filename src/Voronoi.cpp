@@ -1,8 +1,8 @@
 #include "Voronoi.h"
-using std::priority_queue;
-using std::vector;
 #define _USE_MATH_DEFINES
 #include <math.h>
+using std::priority_queue;
+using std::vector;
 
 Voronoi::Voronoi(){
 	boundsSet = false;
@@ -20,6 +20,10 @@ Voronoi::Voronoi(){
 
 	s.p.x = 5.0;
 	s.p.y = 3.0;
+	sites.push_back(s);
+
+	s.p.x = 9.0;
+	s.p.y = 2.0;
 	sites.push_back(s);
 
 	setBounds(0, 15, 0, 8);
@@ -105,7 +109,9 @@ void Voronoi::processSiteEvent(event* e){
 	//search for arc in line vertically above new site
 	//if arc has a circle event, invalidate it
 	beachLineNode* above = beachLine.arcAbove(e->sites[0]);
-	if (above->circleEvent) above->circleEvent->falseAlarm = true;
+	if (above->circleEvent){
+		above->circleEvent->falseAlarm = true;
+	}
 
 	//replace the leaf with a subtree having 3 leaves like so:
 	//          (new, old)
@@ -218,7 +224,7 @@ inline bool Voronoi::breakPointsConverge(nodeTriplet& sites){
 	Point B = sites.n2->s1->p;
 	Point C = sites.n3->s1->p;
 
-	double decision = -(B.y*C.x) + (A.x*B.y) + (A.y*C.x) - (B.y*C.x) - (A.x*C.y) + (B.x*C.y);
+	double decision = -(A.y*B.x) + (A.x*B.y) + (A.y*C.x) - (B.y*C.x) - (A.x*C.y) + (B.x*C.y);
 
 	return (decision < 0) ? true : false;
 }
@@ -278,9 +284,9 @@ inline double Voronoi::dist(Point& p1, Point& p2){
 
 
 inline double Voronoi::signedAngleBetweenVectors(Point& src, Point& p1, Point& p2){
-	double angle = atan2(p2.x - src.x, p2.y - src.y) - atan2(p1.x - src.x, p1.y - src.y);
+	double angle = atan2(p2.y - src.y, p2.x - src.x) - atan2(p1.y - src.y, p1.x - src.x);
 	if (angle < 0) angle += 2 * M_PI;
-
+	
 	return angle;
 }
 
@@ -308,7 +314,8 @@ void Voronoi::processCircleEvent(event* e){
 	attachEdgeToCircleCenter(breakpoint1, center, false);
 	attachEdgeToCircleCenter(breakpoint2, center, false);
 
-	vector<HalfEdge*> faceEdges[3];
+	HalfEdge* faceEdges[6] = { 0 };
+
 	matchEdges(breakpoint1->edge, faceEdges, e);
 	matchEdges(breakpoint1->edge->twin, faceEdges, e);
 	matchEdges(breakpoint2->edge, faceEdges, e);
@@ -328,14 +335,18 @@ void Voronoi::processCircleEvent(event* e){
 	}
 
 	beachLineNode* relocate;
-	if (destroy->left == disappearing) relocate = destroy->right;
-	else relocate = destroy->left;
+	if (destroy->left == disappearing) {
+		relocate = destroy->right;
+	}
+	else {
+		relocate = destroy->left;
+	}
 
-	Site* replace = merge->s1;
-	Site* replaceWith = destroy->s2;
-	if (replace != disappearing->s1){
-		replace = merge->s2;
-		replaceWith = destroy->s1;
+	Site** replace = &merge->s1;
+	Site** replaceWith = &destroy->s1;
+	if (*replace != disappearing->s1){
+		replace = &merge->s2;
+		replaceWith = &destroy->s2;
 	}
 
 	*replace = *replaceWith;
@@ -378,11 +389,16 @@ void Voronoi::processCircleEvent(event* e){
 	matchEdges(B, faceEdges, e);
 
 	for (int i = 0; i < 3; ++i){
-		if (faceEdges[i][0]->origin == center)
-			faceEdges[i][1]->next = faceEdges[i][0];
+		if (faceEdges[i * 2]->origin == center)
+			faceEdges[i * 2 + 1]->next = faceEdges[i * 2];
 		else
-			faceEdges[i][0]->next = faceEdges[i][1];
+			faceEdges[i * 2]->next = faceEdges[i * 2 + 1];
 	}
+
+	//check the new triple of consecutive arcs that has the former left neighbor of the deleted arc
+	//as its middle arc for a circle event. Same for former right neighbor
+	checkArcTripletForCircleEvent(beachLine.leftTriplet(nextArc));
+	checkArcTripletForCircleEvent(beachLine.rightTriplet(prevArc));
 }
 
 //TODO: verify - this might not work correctly in cases where one end is already attached to a vertex
@@ -391,18 +407,18 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 	Point p2 = breakpoint->s2->p;
 	Point c = circleCenter->p;
 
-	//TODO - sweepline height doesnt need to be recalculated
-	double radius = dist(p1, c);
-	double sweeplineHeight = c.y - radius;
-
 	Point intersect1;
 	Point intersect2;
 
-	findParabolaIntersections(p1, p2, sweeplineHeight, intersect1, intersect2);
+	findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
 
 	Point* target = &intersect1;
-	if (moveSweepline ^ (dist(intersect1, c) < dist(intersect2, c))) target = &intersect2;
-	if (moveSweepline) findParabolaIntersections(p1, p2, sweeplineHeight - 1, intersect1, intersect2);
+	if (moveSweepline ^ (dist(intersect1, c) < dist(intersect2, c))){
+		target = &intersect2;
+	}
+	if (moveSweepline){
+		findParabolaIntersections(p1, p2, currentSweeplineY - 1, intersect1, intersect2);
+	}
 
 	double angle1 = signedAngleBetweenVectors(c, *target, p1);
 	double angle2 = signedAngleBetweenVectors(c, *target, p2);
@@ -412,14 +428,26 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 		originFace = breakpoint->s2;
 	}
 
-	if (breakpoint->edge->site == originFace) breakpoint->edge->origin = circleCenter;
-	else breakpoint->edge->twin->origin = circleCenter;
+	if (breakpoint->edge->site == originFace) {
+		breakpoint->edge->origin = circleCenter;
+	}
+	else {
+		breakpoint->edge->twin->origin = circleCenter;
+	}
 }
 
-void Voronoi::matchEdges(HalfEdge* edge, vector<HalfEdge*>* faces, event* circleEvent){
-	if (edge->site == circleEvent->sites[0]) faces[0].push_back(edge);
-	else if (edge->site == circleEvent->sites[1]) faces[1].push_back(edge);
-	else faces[2].push_back(edge);
+void Voronoi::matchEdges(HalfEdge* edge, HalfEdge* faces[], event* circleEvent){
+	for (int i = 0; i < 3; ++i){
+		if (edge->site == circleEvent->sites[i]){
+			if (!faces[2 * i]){
+				faces[2 * i] = edge;
+			}
+			else {
+				faces[2 * i + 1] = edge;
+			}
+			break;
+		}
+	}
 }
 
 //TODO
