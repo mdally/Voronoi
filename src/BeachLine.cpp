@@ -12,13 +12,13 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 	beachLineNode* arc = root;
 
 	while (arc->s2 != nullptr){
-		Point* p1 = &(arc->s1->p);
-		Point* p2 = &(arc->s2->p);
+		Point2* p1 = &(arc->s1->p);
+		Point2* p2 = &(arc->s2->p);
 
-		Point* lower;
+		Point2* lower;
 		bool lowerFirst;
 
-		if (p1->y < p2->y || (p1->y == p2->y && p1->x > p2->x)){
+		if ((*p1)[1] < (*p2)[1] || ((*p1)[1] == (*p2)[1] && (*p1)[0] > (*p2)[0])){
 			lower = p1;
 			lowerFirst = true;
 		}
@@ -29,13 +29,13 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 
 		//get the 2 intersections for this breakpoint. Pick either left of right based on stuff above
 		//move to either left or right child depending on where new site is in relation to breakpoint
-		Point intersect1, intersect2;
-		findParabolaIntersections(*p1, *p2, s->p.y, intersect1, intersect2);
+		Point2 intersect1, intersect2;
+		findParabolaIntersections(*p1, *p2, s->p[1], intersect1, intersect2);
 
-		Point* left;
-		Point* right;
+		Point2* left;
+		Point2* right;
 
-		if (intersect1.x < intersect2.x){
+		if (intersect1[0] < intersect2[0]){
 			left = &intersect1;
 			right = &intersect2;
 		}
@@ -44,7 +44,7 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 			right = &intersect1;
 		}
 
-		Point* compare;
+		Point2* compare;
 		if (lowerFirst){
 			compare = right;
 		}
@@ -52,7 +52,7 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 			compare = left;
 		}
 		
-		if (s->p.x > compare->x){
+		if (s->p[0] > (*compare)[0]){
 			arc = arc->right;
 		}
 		else{

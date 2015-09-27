@@ -9,24 +9,33 @@ Voronoi::Voronoi(){
 
 	/////////junk test code
 	Site s;
-	s.p.x = 3.0;
-	s.p.y = 7.0;
 	s.edge = NULL;
+	s.p[0] = 3.0;
+	s.p[1] = 7.0;
 	sites.push_back(s);
 
-	s.p.x = 11.0;
-	s.p.y = 6.0;
+	s.p[0] = 11.0;
+	s.p[1] = 6.0;
 	sites.push_back(s);
 
-	s.p.x = 5.0;
-	s.p.y = 3.0;
+	s.p[0] = 5.0;
+	s.p[1] = 3.0;
 	sites.push_back(s);
 
-	s.p.x = 9.0;
-	s.p.y = 2.0;
+	s.p[0] = 9.0;
+	s.p[1] = 2.0;
 	sites.push_back(s);
 
 	setBounds(0, 15, 0, 8);
+}
+
+Voronoi::~Voronoi(){
+	for (Vertex* v : vertices){
+		delete v;
+	}
+	for (HalfEdge* e : edges){
+		delete e;
+	}
 }
 
 void Voronoi::setBounds(int bottomX, int topX, int leftY, int rightY){
@@ -42,10 +51,10 @@ void Voronoi::compute(){
 	//add all sites to event queue
 	//figure out bounding box if necessary
 	double xLo, xHi, yLo, yHi;
-	xLo = sites[0].p.x - 1;
-	xHi = sites[0].p.x + 1;
-	yLo = sites[0].p.y - 1;
-	yHi = sites[0].p.y + 1;
+	xLo = sites[0].p[0] - 1;
+	xHi = sites[0].p[0] + 1;
+	yLo = sites[0].p[1] - 1;
+	yHi = sites[0].p[1] + 1;
 
 	for (Site& s : sites){
 		event* e = new event();
@@ -55,16 +64,16 @@ void Voronoi::compute(){
 		e->sites[2] = nullptr;
 		e->disappearingArc = nullptr;
 		e->falseAlarm = false;
-		e->y = s.p.y;
+		e->y = s.p[1];
 
 		eventQueue.push(e);
 
 		if (!boundsSet){
-			if (s.p.x <= xLo) xLo = s.p.x - 1;
-			else if (s.p.x >= xHi) xHi = s.p.x + 1;
+			if (s.p[0] <= xLo) xLo = s.p[0] - 1;
+			else if (s.p[0] >= xHi) xHi = s.p[0] + 1;
 
-			if (s.p.y <= yLo) yLo = s.p.y - 1;
-			else if (s.p.y >= yHi) yHi = s.p.y + 1;
+			if (s.p[1] <= yLo) yLo = s.p[1] - 1;
+			else if (s.p[1] >= yHi) yHi = s.p[1] + 1;
 		}
 	}
 
@@ -77,11 +86,10 @@ void Voronoi::compute(){
 		currentSweeplineY = e->y;
 
 		if (!e->falseAlarm){
-			if (e->type == SITE)
-				processSiteEvent(e);
-			else
-				processCircleEvent(e);
+			if (e->type == SITE) processSiteEvent(e);
+			else processCircleEvent(e);
 		}
+		delete e;
 	}
 
 	//TODO: attach remaining unfinished edges to bounding box
@@ -206,7 +214,7 @@ void Voronoi::checkArcTripletForCircleEvent(nodeTriplet& sites){
 			e->disappearingArc = sites.n2;
 			e->circleCenter = circumcenter(sites);
 			e->falseAlarm = false;
-			e->y = e->circleCenter.y - dist(e->sites[0]->p, e->circleCenter);
+			e->y = e->circleCenter[1] - e->circleCenter.distanceTo(e->sites[0]->p);
 
 			if (e->y < currentSweeplineY){
 				eventQueue.push(e);
@@ -220,71 +228,67 @@ void Voronoi::checkArcTripletForCircleEvent(nodeTriplet& sites){
 }
 
 inline bool Voronoi::breakPointsConverge(nodeTriplet& sites){
-	Point A = sites.n1->s1->p;
-	Point B = sites.n2->s1->p;
-	Point C = sites.n3->s1->p;
+	Point2 A = sites.n1->s1->p;
+	Point2 B = sites.n2->s1->p;
+	Point2 C = sites.n3->s1->p;
 
-	double decision = -(A.y*B.x) + (A.x*B.y) + (A.y*C.x) - (B.y*C.x) - (A.x*C.y) + (B.x*C.y);
+	double decision = -(A[1]*B[0]) + (A[0]*B[1]) + (A[1]*C[0]) - (B[1]*C[0]) - (A[0]*C[1]) + (B[0]*C[1]);
 
 	return (decision < 0) ? true : false;
 }
 
 inline bool Voronoi::siteToLeft(Site* s1, Site* s2){
-	if (s1->p.x < s2->p.x ||
-		s1->p.x == s2->p.x && s1->p.y < s2->p.y)
+	if (s1->p[0] < s2->p[0] ||
+		s1->p[0] == s2->p[0] && s1->p[1] < s2->p[1])
 		return true;
 	return false;
 }
 
-inline Point Voronoi::circumcenter(nodeTriplet& sites){
-	Point A = sites.n1->s1->p;
-	Point B = sites.n2->s1->p;
-	Point C = sites.n3->s1->p;
+Point2 Voronoi::circumcenter(nodeTriplet& sites){
+	Point2 A = sites.n1->s1->p;
+	Point2 B = sites.n2->s1->p;
+	Point2 C = sites.n3->s1->p;
 
-	double dA = A.x*A.x + A.y*A.y;
-	double dB = B.x*B.x + B.y*B.y;
-	double dC = C.x*C.x + C.y*C.y;
+	double dA = A.distanceFromOriginSquared();
+	double dB = B.distanceFromOriginSquared();
+	double dC = C.distanceFromOriginSquared();
 
-	double denom = 2.0 * (A.x*(C.y - B.y) + B.x*(A.y - C.y) + C.x*(B.y - A.y));
+	double denom = 2.0 * (A[0]*(C[1] - B[1]) + B[0]*(A[1] - C[1]) + C[0]*(B[1] - A[1]));
 
-	Point center;
-	center.x = (dA*(C.y - B.y) + dB*(A.y - C.y) + dC*(B.y - A.y)) / denom;
-	center.y = -(dA*(C.x - B.x) + dB*(A.x - C.x) + dC*(B.x - A.x)) / denom;
+	Point2 center;
+	center[0] = (dA*(C[1] - B[1]) + dB*(A[1] - C[1]) + dC*(B[1] - A[1])) / denom;
+	center[1] = -(dA*(C[0] - B[0]) + dB*(A[0] - C[0]) + dC*(B[0] - A[0])) / denom;
 
 	return center;
 }
 
-inline void findParabolaIntersections(Point& focus1, Point& focus2, double directrixHeight,
-	Point& intersection1, Point& intersection2){
+void findParabolaIntersections(Point2& focus1, Point2& focus2, double directrixHeight,
+	Point2& intersection1, Point2& intersection2){
 
-	double bmc1 = focus1.y - directrixHeight;
+	double bmc1 = focus1[1] - directrixHeight;
 	double a1 = 1 / (2.0*bmc1);
-	double b1 = -focus1.x / bmc1;
-	double c1 = (focus1.x*focus1.x + focus1.y*focus1.y - directrixHeight*directrixHeight) / (2.0*bmc1);
+	double b1 = -focus1[0] / bmc1;
+	double c1 = (focus1[0]*focus1[0] + focus1[1]*focus1[1] - directrixHeight*directrixHeight) / (2.0*bmc1);
 
-	double bmc2 = focus2.y - directrixHeight;
+	double bmc2 = focus2[1] - directrixHeight;
 	double a2 = 1 / (2.0*bmc2);
-	double b2 = -focus2.x / bmc2;
-	double c2 = (focus2.x*focus2.x + focus2.y*focus2.y - directrixHeight*directrixHeight) / (2.0*bmc2);
+	double b2 = -focus2[0] / bmc2;
+	double c2 = (focus2[0]*focus2[0] + focus2[1]*focus2[1] - directrixHeight*directrixHeight) / (2.0*bmc2);
 
 	double a = a2 - a1;
 	double b = b2 - b1;
 	double c = c2 - c1;
 
-	intersection1.x = (-b - sqrt(b*b - 4.0*a*c)) / (2.0*a);
-	intersection2.x = (-b + sqrt(b*b - 4.0*a*c)) / (2.0*a);
+	intersection1[0] = (-b - sqrt(b*b - 4.0*a*c)) / (2.0*a);
+	intersection2[0] = (-b + sqrt(b*b - 4.0*a*c)) / (2.0*a);
 
-	intersection1.y = a1*intersection1.x*intersection1.x + b1*intersection1.x + c1;
-	intersection2.y = a2*intersection2.x*intersection2.x + b2*intersection2.x + c2;
-}
-
-inline double Voronoi::dist(Point& p1, Point& p2){
-	return sqrt((p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y));
+	intersection1[1] = a1*intersection1[0]*intersection1[0] + b1*intersection1[0] + c1;
+	intersection2[1] = a2*intersection2[0]*intersection2[0] + b2*intersection2[0] + c2;
 }
 
 
-inline double Voronoi::signedAngleBetweenVectors(Point& src, Point& p1, Point& p2){
-	double angle = atan2(p2.y - src.y, p2.x - src.x) - atan2(p1.y - src.y, p1.x - src.x);
+inline double Voronoi::signedAngleBetweenVectors(Vector2& v1, Vector2& v2){
+	double angle = atan2(v2[1], v2[0]) - atan2(v1[1], v1[0]);
 	if (angle < 0) angle += 2 * M_PI;
 	
 	return angle;
@@ -403,25 +407,25 @@ void Voronoi::processCircleEvent(event* e){
 
 //TODO: verify - this might not work correctly in cases where one end is already attached to a vertex
 void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circleCenter, bool moveSweepline){
-	Point p1 = breakpoint->s1->p;
-	Point p2 = breakpoint->s2->p;
-	Point c = circleCenter->p;
+	Point2 p1 = breakpoint->s1->p;
+	Point2 p2 = breakpoint->s2->p;
+	Point2 c = circleCenter->p;
 
-	Point intersect1;
-	Point intersect2;
+	Point2 intersect1;
+	Point2 intersect2;
 
 	findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
 
-	Point* target = &intersect1;
-	if (moveSweepline ^ (dist(intersect1, c) < dist(intersect2, c))){
+	Point2* target = &intersect1;
+	if (moveSweepline ^ (c.distanceTo(intersect1) < c.distanceTo(intersect2))){
 		target = &intersect2;
 	}
 	if (moveSweepline){
 		findParabolaIntersections(p1, p2, currentSweeplineY - 1, intersect1, intersect2);
 	}
 
-	double angle1 = signedAngleBetweenVectors(c, *target, p1);
-	double angle2 = signedAngleBetweenVectors(c, *target, p2);
+	double angle1 = signedAngleBetweenVectors(*target-c, p1-c);
+	double angle2 = signedAngleBetweenVectors(*target-c, p2-c);
 
 	Site* originFace = breakpoint->s1;
 	if (angle2 < angle1){

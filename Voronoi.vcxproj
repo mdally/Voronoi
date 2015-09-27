@@ -65,11 +65,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\DCEL.h" />
+    <ClInclude Include="src\Point2.h" />
+    <ClInclude Include="src\Vector2.h" />
     <ClInclude Include="src\Voronoi.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BeachLine.cpp" />
+    <ClCompile Include="src\Point2.cpp" />
     <ClCompile Include="src\test.cpp" />
+    <ClCompile Include="src\Vector2.cpp" />
     <ClCompile Include="src\Voronoi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

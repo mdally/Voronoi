@@ -1,19 +1,17 @@
 #ifndef _DCEL_H_
 #define _DCEL_H_
 
-//TODO: get better point and vector classes
+#include "Point2.h"
+#include "Vector2.h"
+
 //TODO: change DCEL to class to provide constructors
 
 //forward declarations
 struct HalfEdge;
 struct Site;
 
-struct Point{
-	double x, y;
-};
-
 struct Vertex{
-	Point p;
+	Point2 p;
 	HalfEdge* leaving;
 };
 
@@ -25,7 +23,7 @@ struct HalfEdge{
 };
 
 struct Site{
-	Point p;
+	Point2 p;
 	HalfEdge* edge;
 };
 
