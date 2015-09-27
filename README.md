@@ -1,2 +1,2 @@
 # Voronoi
-C++ implementation of Fortune's Algorithm for computing Voronoi diagrams
+(IN PROGRESS) C++ implementation of Fortune's Algorithm for computing Voronoi diagrams
