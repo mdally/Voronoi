@@ -1,32 +1,17 @@
 #include "Voronoi.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <limits>
+#include <utility>
+#include <algorithm>
 using std::priority_queue;
 using std::vector;
+using std::pair;
+
+Point2 diagramCenter;
 
 Voronoi::Voronoi(){
 	boundsSet = false;
-
-	/////////junk test code
-	Site s;
-	s.edge = NULL;
-	s.p[0] = 3.0;
-	s.p[1] = 7.0;
-	sites.push_back(s);
-
-	s.p[0] = 11.0;
-	s.p[1] = 6.0;
-	sites.push_back(s);
-
-	s.p[0] = 5.0;
-	s.p[1] = 3.0;
-	sites.push_back(s);
-
-	s.p[0] = 9.0;
-	s.p[1] = 2.0;
-	sites.push_back(s);
-
-	setBounds(0, 15, 0, 8);
 }
 
 Voronoi::~Voronoi(){
@@ -38,12 +23,13 @@ Voronoi::~Voronoi(){
 	}
 }
 
-void Voronoi::setBounds(int bottomX, int topX, int leftY, int rightY){
-	minX = bottomX;
-	maxX = topX;
-	minY = leftY;
-	maxY = rightY;
+void Voronoi::setBounds(int leftX, int rightX, int bottomY, int topY){
+	minX = leftX;
+	maxX = rightX;
+	minY = bottomY;
+	maxY = topY;
 
+	diagramCenter = Point2((leftX+rightX)/2.0, (bottomY+topY)/2.0);
 	boundsSet = true;
 }
 
@@ -56,28 +42,32 @@ void Voronoi::compute(){
 	yLo = sites[0].p[1] - 1;
 	yHi = sites[0].p[1] + 1;
 
-	for (Site& s : sites){
+	int numSites = sites.size();
+	for (int i = 0; i < numSites; ++i){
+		Site* s = &(sites[i]);
 		event* e = new event();
 		e->type = SITE;
-		e->sites[0] = &s;
+		e->sites[0] = s;
 		e->sites[1] = nullptr;
 		e->sites[2] = nullptr;
 		e->disappearingArc = nullptr;
 		e->falseAlarm = false;
-		e->y = s.p[1];
+		e->y = s->p[1];
 
 		eventQueue.push(e);
 
 		if (!boundsSet){
-			if (s.p[0] <= xLo) xLo = s.p[0] - 1;
-			else if (s.p[0] >= xHi) xHi = s.p[0] + 1;
+			if (s->p[0] <= xLo) xLo = s->p[0] - 1;
+			else if (s->p[0] >= xHi) xHi = s->p[0] + 1;
 
-			if (s.p[1] <= yLo) yLo = s.p[1] - 1;
-			else if (s.p[1] >= yHi) yHi = s.p[1] + 1;
+			if (s->p[1] <= yLo) yLo = s->p[1] - 1;
+			else if (s->p[1] >= yHi) yHi = s->p[1] + 1;
 		}
 	}
 
-	if (!boundsSet) setBounds((int)floor(xLo), (int)ceil(xHi), (int)floor(yLo), (int)ceil(yHi));
+	if (!boundsSet){
+		setBounds((int)floor(xLo), (int)ceil(xHi), (int)floor(yLo), (int)ceil(yHi));
+	}
 
 	//process event queue
 	while (!eventQueue.empty()){
@@ -86,15 +76,21 @@ void Voronoi::compute(){
 		currentSweeplineY = e->y;
 
 		if (!e->falseAlarm){
-			if (e->type == SITE) processSiteEvent(e);
-			else processCircleEvent(e);
+			if (e->type == SITE){
+				processSiteEvent(e);
+			}
+			else{
+				processCircleEvent(e);
+			}
 		}
 		delete e;
 	}
 
-	//TODO: attach remaining unfinished edges to bounding box
+	//trim vertices & edges that fall outside the box
+	trimOutsideEdges();
+	attachEdgesToBoundingBox();
 
-	//TODO: clean up all resources necessary
+	//TODO: clean up any resources necessary
 }
 
 void Voronoi::processSiteEvent(event* e){
@@ -174,6 +170,8 @@ void Voronoi::processSiteEvent(event* e){
 	oldArcRight->circleEvent = nullptr;
 	oldArcRight->edge = nullptr;
 
+	//beachLine.printLine();
+
 	//create new half-edge records that will be traced by the new breakpoints
 	HalfEdge* A = new HalfEdge();
 	HalfEdge* B = new HalfEdge();
@@ -184,13 +182,17 @@ void Voronoi::processSiteEvent(event* e){
 	A->twin = B;
 	A->next = nullptr;
 	A->site = oldSite;
-	if (oldSite->edge == nullptr) oldSite->edge = A;
+	if (oldSite->edge == nullptr){
+		oldSite->edge = A;
+	}
 
 	B->origin = nullptr;
 	B->twin = A;
 	B->next = nullptr;
 	B->site = newSite;
-	if (newSite->edge == nullptr) newSite->edge = B;
+	if (newSite->edge == nullptr){
+		newSite->edge = B;
+	}
 
 	edges.push_back(A);
 	edges.push_back(B);
@@ -301,19 +303,24 @@ void Voronoi::processCircleEvent(event* e){
 	//and successor)
 	beachLineNode* disappearing = e->disappearingArc;
 	beachLineNode* prevArc = beachLine.prevArc(disappearing);
-	if (prevArc && prevArc->circleEvent) prevArc->circleEvent->falseAlarm = true;
+	if (prevArc && prevArc->circleEvent){
+		prevArc->circleEvent->falseAlarm = true;
+	}
 
 	beachLineNode* nextArc = beachLine.nextArc(disappearing);
-	if (nextArc && nextArc->circleEvent) nextArc->circleEvent->falseAlarm = true;
+	if (nextArc && nextArc->circleEvent){
+		nextArc->circleEvent->falseAlarm = true;
+	}
 
 	//add the center of the cirlce from the event as a vertex in the DCEL
 	//create new half-edge records corresponding to the new breakpoint on the beachline
 	Vertex* center = new Vertex();
 	center->p = e->circleCenter;
+	center->leaving = nullptr;
 
 	//attach existing half-edges to new vertex
-	beachLineNode* breakpoint1 = beachLine.predecessor(e->disappearingArc);
-	beachLineNode* breakpoint2 = beachLine.successor(e->disappearingArc);
+	beachLineNode* breakpoint1 = beachLine.predecessor(disappearing);
+	beachLineNode* breakpoint2 = beachLine.successor(disappearing);
 
 	attachEdgeToCircleCenter(breakpoint1, center, false);
 	attachEdgeToCircleCenter(breakpoint2, center, false);
@@ -366,6 +373,8 @@ void Voronoi::processCircleEvent(event* e){
 	delete disappearing;
 	delete destroy;
 
+	//beachLine.printLine();
+
 	HalfEdge* A = new HalfEdge();
 	HalfEdge* B = new HalfEdge();
 
@@ -376,13 +385,17 @@ void Voronoi::processCircleEvent(event* e){
 	A->next = nullptr;
 	A->twin = B;
 	A->site = merge->s1;
-	if (merge->s1->edge == nullptr) merge->s1->edge = A;
+	if (merge->s1->edge == nullptr){
+		merge->s1->edge = A;
+	}
 
 	B->origin = nullptr;
 	B->next = nullptr;
 	B->twin = A;
 	B->site = merge->s2;
-	if (merge->s2->edge == nullptr) merge->s2->edge = B;
+	if (merge->s2->edge == nullptr){
+		merge->s2->edge = B;
+	}
 
 	edges.push_back(A);
 	edges.push_back(B);
@@ -401,11 +414,66 @@ void Voronoi::processCircleEvent(event* e){
 
 	//check the new triple of consecutive arcs that has the former left neighbor of the deleted arc
 	//as its middle arc for a circle event. Same for former right neighbor
-	checkArcTripletForCircleEvent(beachLine.leftTriplet(nextArc));
-	checkArcTripletForCircleEvent(beachLine.rightTriplet(prevArc));
+	checkArcTripletForCircleEvent(beachLine.leftTriplet(prevArc));
+	checkArcTripletForCircleEvent(beachLine.rightTriplet(nextArc));
+
+	vertices.push_back(center);
 }
 
-//TODO: verify - this might not work correctly in cases where one end is already attached to a vertex
+//trim vertices which fall outside the bounding box from the diagram
+void Voronoi::trimOutsideEdges(){
+	vector<Vertex*> cleanVerts;
+	for (Vertex* v : vertices){
+		Point2& p = v->p;
+
+		if (p[0] < minX || p[0] > maxX || p[1] < minY || p[1] > maxY){
+			HalfEdge* e = v->leaving;
+
+			if (e){
+				e->origin = nullptr;
+				if (e->twin->origin)
+					danglingEdges.push_back(e);
+				e = e->twin->next;
+			}
+
+			if (e){
+				e->origin = nullptr;
+				if (e->twin->origin)
+					danglingEdges.push_back(e);
+				e = e->twin->next;
+			}
+
+			if (e){
+				e->origin = nullptr;
+				if (e->twin->origin)
+					danglingEdges.push_back(e);
+			}
+
+			delete v;
+		}
+		else{
+			cleanVerts.push_back(v);
+		}
+	}
+	vertices.clear();
+	vertices = cleanVerts;
+
+	//now remove dangling edges from trimmed vertices
+	int len = edges.size()/2;
+	vector<HalfEdge*> cleanEdges;
+	for (int i = 0; i < len; ++i){
+		HalfEdge* e = edges[2 * i];
+
+		if (e->origin || e->twin->origin){
+			cleanEdges.push_back(e);
+			cleanEdges.push_back(e->twin);
+		}
+	}
+
+	edges.clear();
+	edges = cleanEdges;
+}
+
 void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circleCenter, bool moveSweepline){
 	Point2 p1 = breakpoint->s1->p;
 	Point2 p2 = breakpoint->s2->p;
@@ -434,9 +502,15 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 
 	if (breakpoint->edge->site == originFace) {
 		breakpoint->edge->origin = circleCenter;
+		if (circleCenter->leaving == nullptr){
+			circleCenter->leaving = breakpoint->edge;
+		}
 	}
 	else {
 		breakpoint->edge->twin->origin = circleCenter;
+		if (circleCenter->leaving == nullptr){
+			circleCenter->leaving = breakpoint->edge->twin;
+		}
 	}
 }
 
@@ -449,7 +523,255 @@ void Voronoi::matchEdges(HalfEdge* edge, HalfEdge* faces[], event* circleEvent){
 			else {
 				faces[2 * i + 1] = edge;
 			}
-			break;
+			return;
+		}
+	}
+}
+
+bool orderedClockwise(pair<HalfEdge*, boundary>& e1, pair<HalfEdge*, boundary>& e2){
+	Vector2 direction1 = e1.first->origin->p - diagramCenter;
+	Vector2 direction2 = e2.first->origin->p - diagramCenter;
+
+	double angle1 = atan2(direction1[1], direction1[0]);
+	double angle2 = atan2(direction2[1], direction2[0]);
+
+	if (angle1 < 0){
+		angle1 += 2 * M_PI;
+	}
+	if (angle2 < 0){
+		angle2 += 2 * M_PI;
+	}
+
+	return angle1 > angle2;
+}
+
+void Voronoi::attachEdgesToBoundingBox(){
+	vector<pair<HalfEdge*,boundary>> orderedEdges;
+	currentSweeplineY -= 1;
+	
+	beachLineNode* n = beachLine.min(beachLine.root);
+	n = beachLine.successor(n);
+	
+	while (n && n->s2){
+		danglingEdges.push_back(n->edge);
+		n = beachLine.successor(beachLine.successor(n));
+	}
+	
+	for(HalfEdge* e : danglingEdges){
+		if (e->origin || e->twin->origin){
+			Point2* p1 = &(e->site->p);
+			Point2* p2 = &(e->twin->site->p);
+
+			Point2* lower;
+			bool lowerFirst;
+
+			if ((*p1)[1] < (*p2)[1] || ((*p1)[1] == (*p2)[1] && (*p1)[0] > (*p2)[0])){
+				lower = p1;
+				lowerFirst = true;
+			}
+			else{
+				lower = p2;
+				lowerFirst = false;
+			}
+
+			Point2 intersect1, intersect2;
+			findParabolaIntersections(*p1, *p2, currentSweeplineY, intersect1, intersect2);
+
+			Point2* left = &intersect1;
+			Point2* right = &intersect2;
+			if (intersect2[0] < intersect1[0]){
+				left = &intersect2;
+				right = &intersect1;
+			}
+
+			Point2* target;
+			if (lowerFirst){
+				target = right;
+			}
+			else{
+				target = left;
+			}
+
+			Point2* src = &(e->origin->p);
+			if (!src){
+				src = &(e->twin->origin->p);
+			}
+
+			Vector2 direction = *target - *src;
+			direction = unit(direction);
+
+			boundary b;
+			double t;
+			findIntersectionWithBoundaries(*src, direction, t, b);
+
+			Vertex* v = new Vertex();
+			v->p = *src + t*direction;
+
+			if (e->origin){
+				e->twin->origin = v;
+				v->leaving = e->twin;
+				orderedEdges.push_back(pair<HalfEdge*, boundary>(e->twin, b));
+			}
+			else{
+				e->origin = v;
+				v->leaving = e;
+				orderedEdges.push_back(pair<HalfEdge*, boundary>(e, b));
+			}
+		}
+		else{
+			delete e->twin;
+			delete e;
+		}
+	}
+
+	std::sort(orderedEdges.begin(), orderedEdges.end(), orderedClockwise);
+
+	//now link them up
+	int numEdges = orderedEdges.size();
+	for (int i = 0; i < numEdges; ++i){
+		int nextIdx = (i + 1) % numEdges;
+
+		pair<HalfEdge*, boundary>* currEdge = &orderedEdges.at(i);
+		pair<HalfEdge*, boundary>* nextEdge = &orderedEdges.at(nextIdx);
+		pair<HalfEdge*, boundary> tmp;
+		tmp.first = currEdge->first;
+		tmp.second = currEdge->second;
+
+		HalfEdge* prevIn = nullptr;
+
+		while (tmp.second != nextEdge->second){
+			Vertex* v = new Vertex();
+
+			switch (tmp.second){
+				case RIGHT:{
+					v->p = Point2(maxX, minY);
+					tmp.second = BOTTOM;
+				} break;
+				case BOTTOM:{
+					v->p = Point2(minX, minY);
+					tmp.second = LEFT;
+				} break;
+				case LEFT:{
+					v->p = Point2(minX, maxY);
+					tmp.second = TOP;
+				} break;
+				case TOP:{
+					v->p = Point2(maxX, maxY);
+					tmp.second = RIGHT;
+				} break;
+			}
+
+			HalfEdge* A = new HalfEdge();
+			HalfEdge* B = new HalfEdge();
+
+			HalfEdge* in;
+			HalfEdge* out;
+			if (tmp.first->next){
+				in = tmp.first;
+				out = tmp.first->twin;
+			}
+			else{
+				in = tmp.first->twin;
+				out = tmp.first;
+			}
+
+			A->next = in;
+			A->origin = v;
+			A->site = in->site;
+			A->twin = B;
+			prevIn = A;
+
+			B->next = nullptr;
+			B->origin = in->origin;
+			B->site = nullptr;
+			B->twin = A;
+
+			edges.push_back(A);
+			edges.push_back(B);
+
+			v->leaving = A;
+			vertices.push_back(v);
+
+			tmp.first = A;
+		}
+
+		if (prevIn == nullptr){
+			if (nextEdge->first->next){
+				prevIn = nextEdge->first->twin;
+			}
+			else{
+				prevIn = nextEdge->first;
+			}
+
+			if (prevIn == currEdge->first->next){
+				prevIn = currEdge->first;
+			}
+			else{
+				prevIn = currEdge->first->twin;
+			}
+		}
+
+		HalfEdge* A = new HalfEdge();
+		HalfEdge* B = new HalfEdge();
+
+		HalfEdge* in;
+		HalfEdge* out;
+		if (nextEdge->first->next){
+			in = nextEdge->first->twin;
+			out = nextEdge->first;
+		}
+		else{
+			in = nextEdge->first;;
+			out = nextEdge->first->twin;
+		}
+
+		A->next = prevIn;
+		A->origin = out->origin;
+		A->site = in->site;
+		A->twin = B;
+
+		B->next = nullptr;
+		B->origin = prevIn->origin;
+		B->site = nullptr;
+		B->twin = A;
+
+		in->next = A;
+
+		edges.push_back(A);
+		edges.push_back(B);
+	}
+}
+
+void Voronoi::findIntersectionWithBoundaries(Point2& src, Vector2& direction, double& t, boundary& b){
+	t = std::numeric_limits<double>::max();
+	double tmp;
+
+	if (direction[0] != 0.0){
+		tmp = (minX - src[0]) / direction[0];
+		if (tmp > 0 && tmp < t){
+			t = tmp;
+			b = LEFT;
+		}
+
+		tmp = (maxX - src[0]) / direction[0];
+		if (tmp > 0 && tmp < t){
+			t = tmp;
+			b = RIGHT;
+		}
+	}
+
+	if (direction[1] != 0.0){
+		tmp = (minY - src[1]) / direction[1];
+		if (tmp > 0 && tmp < t){
+			t = tmp;
+			b = BOTTOM;
+
+		}
+
+		tmp = (maxY - src[1]) / direction[1];
+		if (tmp > 0 && tmp < t){
+			t = tmp;
+			b = TOP;
 		}
 	}
 }

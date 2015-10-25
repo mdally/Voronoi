@@ -1,4 +1,8 @@
 #include "Voronoi.h"
+#include <iostream>
+using std::cout;
+using std::endl;
+#include <string>
 
 BeachLine::BeachLine(){
 	root = nullptr;
@@ -120,7 +124,7 @@ beachLineNode* BeachLine::nextArc(beachLineNode* n){
 }
 
 nodeTriplet BeachLine::leftTriplet(beachLineNode* n){
-	nodeTriplet triplet;
+	nodeTriplet triplet = { 0 };
 	triplet.n1 = n;
 	triplet.n2 = nextArc(n);
 	triplet.n3 = nextArc(triplet.n2);
@@ -129,7 +133,7 @@ nodeTriplet BeachLine::leftTriplet(beachLineNode* n){
 }
 
 nodeTriplet BeachLine::rightTriplet(beachLineNode* n){
-	nodeTriplet triplet;
+	nodeTriplet triplet = { 0 };
 	triplet.n3 = n;
 	triplet.n2 = prevArc(n);
 	triplet.n1 = prevArc(triplet.n2);
@@ -142,4 +146,24 @@ void BeachLine::destroy(beachLineNode* n){
 	if (n->left) destroy(n->left);
 	if (n->right) destroy(n->right);
 	delete n;
+}
+
+void BeachLine::printLine(){
+	beachLineNode* n = min(root);
+
+	while(n){
+		printNode(n);
+		cout << endl;
+		n = successor(n);
+	}
+	cout << endl << endl;
+}
+
+void BeachLine::printNode(beachLineNode* n){
+	cout << "<";
+	cout << "(" << n->s1->p[0] << "," << n->s1->p[1] << ")";
+	if (n->s2){
+		cout << " - (" << n->s2->p[0] << "," << n->s2->p[1] << ")";
+	}
+	cout << ">";
 }

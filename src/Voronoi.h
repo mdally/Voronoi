@@ -50,6 +50,9 @@ public:
 	nodeTriplet rightTriplet(beachLineNode* n);
 
 	void destroy(beachLineNode* n);
+
+	void printLine();
+	void printNode(beachLineNode* n);
 };
 
 enum eventType { SITE, CIRCLE };
@@ -84,13 +87,18 @@ public:
 			p2[1] = e2->y;
 		}
 
-		if (p1[1] < p2[1]) return true;
-		if (p1[1] == p2[1] && p1[0] > p2[0]) return true;
+		if (p1[1] < p2[1]){
+			return true;
+		}
+		if (p1[1] == p2[1] && p1[0] > p2[0]){
+			return true;
+		}
 		return false;
 	}
 };
 
 //TODO: how to pass in sites?
+enum boundary { TOP, BOTTOM, LEFT, RIGHT };
 class Voronoi{
 public:
 	std::vector<Site> sites;
@@ -110,6 +118,7 @@ private:
 
 	std::priority_queue<event*, std::vector<event*>, compareEvents> eventQueue;
 	BeachLine beachLine;
+	std::vector<HalfEdge*> danglingEdges;
 
 	void processSiteEvent(event* e);
 	void processCircleEvent(event* e);
@@ -124,6 +133,10 @@ private:
 	friend void findParabolaIntersections(Point2& focus1, Point2& focus2, double directrixY, 
 		Point2& intersection1, Point2& intersection2);
 	inline double signedAngleBetweenVectors(Vector2& v1, Vector2& v2);
+
+	void trimOutsideEdges();
+	void attachEdgesToBoundingBox();
+	void findIntersectionWithBoundaries(Point2& src, Vector2& direction, double& t, boundary& b);
 };
 
 #endif
