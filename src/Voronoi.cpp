@@ -98,12 +98,6 @@ void Voronoi::processSiteEvent(event* e){
 	if (beachLine.root == nullptr){
 		beachLineNode* root = new beachLineNode();
 		root->s1 = e->sites[0];
-		root->s2 = nullptr;
-		root->parent = nullptr;
-		root->left = nullptr;
-		root->right = nullptr;
-		root->circleEvent = nullptr;
-		root->edge = nullptr;
 
 		beachLine.root = root;
 
@@ -129,10 +123,8 @@ void Voronoi::processSiteEvent(event* e){
 	beachLineNode* new_old = above;
 	new_old->s1 = newSite;
 	new_old->s2 = oldSite;
-	new_old->circleEvent = nullptr;
 	new_old->left = new beachLineNode();
 	new_old->right = new beachLineNode();
-	new_old->edge = nullptr;
 
 	beachLineNode* old_new = above->left;
 	old_new->s1 = oldSite;
@@ -140,37 +132,20 @@ void Voronoi::processSiteEvent(event* e){
 	old_new->parent = above;
 	old_new->left = new beachLineNode();
 	old_new->right = new beachLineNode();
-	old_new->circleEvent = nullptr;
-	old_new->edge = nullptr;
 
 	beachLineNode* oldArcLeft = old_new->left;
 	oldArcLeft->s1 = oldSite;
-	oldArcLeft->s2 = nullptr;
 	oldArcLeft->parent = old_new;
-	oldArcLeft->left = nullptr;
-	oldArcLeft->right = nullptr;
-	oldArcLeft->circleEvent = nullptr;
-	oldArcLeft->edge = nullptr;
 
 	beachLineNode* newArc = old_new->right;
 	newArc->s1 = newSite;
-	newArc->s2 = nullptr;
 	newArc->parent = old_new;
-	newArc->left = nullptr;
-	newArc->right = nullptr;
-	newArc->circleEvent = nullptr;
-	newArc->edge = nullptr;
 
 	beachLineNode* oldArcRight = new_old->right;
 	oldArcRight->s1 = oldSite;
-	oldArcRight->s2 = nullptr;
 	oldArcRight->parent = new_old;
-	oldArcRight->left = nullptr;
-	oldArcRight->right = nullptr;
-	oldArcRight->circleEvent = nullptr;
-	oldArcRight->edge = nullptr;
 
-	//beachLine.printLine();
+	beachLine.printLine();
 
 	//create new half-edge records that will be traced by the new breakpoints
 	HalfEdge* A = new HalfEdge();
@@ -178,17 +153,13 @@ void Voronoi::processSiteEvent(event* e){
 	new_old->edge = A;
 	old_new->edge = A;
 
-	A->origin = nullptr;
 	A->twin = B;
-	A->next = nullptr;
 	A->site = oldSite;
 	if (oldSite->edge == nullptr){
 		oldSite->edge = A;
 	}
 
-	B->origin = nullptr;
 	B->twin = A;
-	B->next = nullptr;
 	B->site = newSite;
 	if (newSite->edge == nullptr){
 		newSite->edge = B;
@@ -314,9 +285,7 @@ void Voronoi::processCircleEvent(event* e){
 
 	//add the center of the cirlce from the event as a vertex in the DCEL
 	//create new half-edge records corresponding to the new breakpoint on the beachline
-	Vertex* center = new Vertex();
-	center->p = e->circleCenter;
-	center->leaving = nullptr;
+	Vertex* center = new Vertex(e->circleCenter);
 
 	//attach existing half-edges to new vertex
 	beachLineNode* breakpoint1 = beachLine.predecessor(disappearing);
@@ -373,7 +342,7 @@ void Voronoi::processCircleEvent(event* e){
 	delete disappearing;
 	delete destroy;
 
-	//beachLine.printLine();
+	beachLine.printLine();
 
 	HalfEdge* A = new HalfEdge();
 	HalfEdge* B = new HalfEdge();
@@ -381,16 +350,12 @@ void Voronoi::processCircleEvent(event* e){
 	merge->edge = A;
 	merge->circleEvent = nullptr;
 
-	A->origin = nullptr;
-	A->next = nullptr;
 	A->twin = B;
 	A->site = merge->s1;
 	if (merge->s1->edge == nullptr){
 		merge->s1->edge = A;
 	}
 
-	B->origin = nullptr;
-	B->next = nullptr;
 	B->twin = A;
 	B->site = merge->s2;
 	if (merge->s2->edge == nullptr){
@@ -559,53 +524,40 @@ void Voronoi::attachEdgesToBoundingBox(){
 	
 	for(HalfEdge* e : danglingEdges){
 		if (e->origin || e->twin->origin){
-			Point2* p1 = &(e->site->p);
-			Point2* p2 = &(e->twin->site->p);
-
-			Point2* lower;
-			bool lowerFirst;
-
-			if ((*p1)[1] < (*p2)[1] || ((*p1)[1] == (*p2)[1] && (*p1)[0] > (*p2)[0])){
-				lower = p1;
-				lowerFirst = true;
+			Point2 src, p1, p2;
+			if (e->origin){
+				src = e->origin->p;
+				p1 = e->site->p;
+				p2 = e->twin->site->p;
 			}
 			else{
-				lower = p2;
-				lowerFirst = false;
+				src = e->twin->origin->p;
+				p1 = e->twin->site->p;
+				p2 = e->site->p;
 			}
 
 			Point2 intersect1, intersect2;
-			findParabolaIntersections(*p1, *p2, currentSweeplineY, intersect1, intersect2);
+			findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
 
-			Point2* left = &intersect1;
-			Point2* right = &intersect2;
-			if (intersect2[0] < intersect1[0]){
-				left = &intersect2;
-				right = &intersect1;
-			}
-
-			Point2* target;
-			if (lowerFirst){
-				target = right;
+			double angle1 = signedAngleBetweenVectors(intersect1 - src, p1 - src);
+			double angle2 = signedAngleBetweenVectors(intersect1 - src, p2 - src);
+			Point2 target;
+			if (angle1 < angle2){
+				target = intersect1;
 			}
 			else{
-				target = left;
+				target = intersect2;
 			}
 
-			Point2* src = &(e->origin->p);
-			if (!src){
-				src = &(e->twin->origin->p);
-			}
-
-			Vector2 direction = *target - *src;
+			Vector2 direction = target - src;
 			direction = unit(direction);
 
 			boundary b;
 			double t;
-			findIntersectionWithBoundaries(*src, direction, t, b);
+			findIntersectionWithBoundaries(src, direction, t, b);
 
 			Vertex* v = new Vertex();
-			v->p = *src + t*direction;
+			v->p = src + t*direction;
 
 			if (e->origin){
 				e->twin->origin = v;
@@ -681,9 +633,7 @@ void Voronoi::attachEdgesToBoundingBox(){
 			A->twin = B;
 			prevIn = A;
 
-			B->next = nullptr;
 			B->origin = in->origin;
-			B->site = nullptr;
 			B->twin = A;
 
 			edges.push_back(A);
@@ -730,9 +680,7 @@ void Voronoi::attachEdgesToBoundingBox(){
 		A->site = in->site;
 		A->twin = B;
 
-		B->next = nullptr;
 		B->origin = prevIn->origin;
-		B->site = nullptr;
 		B->twin = A;
 
 		in->next = A;

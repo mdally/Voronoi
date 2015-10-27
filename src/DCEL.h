@@ -13,6 +13,12 @@ struct Site;
 struct Vertex{
 	Point2 p;
 	HalfEdge* leaving;
+
+	Vertex();
+	Vertex(Point2 _p);
+	Vertex(double _x, double _y);
+	Vertex(Point2 _p, HalfEdge* _e);
+	Vertex(double _x, double _y, HalfEdge* _e);
 };
 
 struct HalfEdge{
@@ -20,11 +26,19 @@ struct HalfEdge{
 	HalfEdge* twin;
 	HalfEdge* next;
 	Site* site;
+
+	HalfEdge();
 };
 
 struct Site{
 	Point2 p;
 	HalfEdge* edge;
+
+	Site();
+	Site(Point2 _p);
+	Site(double _x, double _y);
+	Site(Point2 _p, HalfEdge* _e);
+	Site(double _x, double _y, HalfEdge* _e);
 };
 
 #endif

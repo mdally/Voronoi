@@ -1,8 +1,8 @@
 #include "Voronoi.h"
 #include <cstdlib>
 
-#define dimension 20000000
-#define numSites 10000
+#define dimension 10
+#define numSites 4
 
 int main(int argc, char** argv){
 	Voronoi diagram;

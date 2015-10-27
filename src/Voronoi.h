@@ -19,6 +19,9 @@ struct beachLineNode{
 
 	event* circleEvent;
 	HalfEdge* edge;
+
+	beachLineNode() : s1(nullptr), s2(nullptr), parent(nullptr), left(nullptr), 
+		right(nullptr), circleEvent(nullptr), edge(nullptr) {}
 };
 
 struct nodeTriplet{
