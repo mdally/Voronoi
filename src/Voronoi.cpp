@@ -145,7 +145,7 @@ void Voronoi::processSiteEvent(event* e){
 	oldArcRight->s1 = oldSite;
 	oldArcRight->parent = new_old;
 
-	beachLine.printLine();
+	//beachLine.printLine();
 
 	//create new half-edge records that will be traced by the new breakpoints
 	HalfEdge* A = new HalfEdge();
@@ -342,7 +342,7 @@ void Voronoi::processCircleEvent(event* e){
 	delete disappearing;
 	delete destroy;
 
-	beachLine.printLine();
+	//beachLine.printLine();
 
 	HalfEdge* A = new HalfEdge();
 	HalfEdge* B = new HalfEdge();
@@ -581,10 +581,8 @@ void Voronoi::attachEdgesToBoundingBox(){
 	//now link them up
 	int numEdges = orderedEdges.size();
 	for (int i = 0; i < numEdges; ++i){
-		int nextIdx = (i + 1) % numEdges;
-
 		pair<HalfEdge*, boundary>* currEdge = &orderedEdges.at(i);
-		pair<HalfEdge*, boundary>* nextEdge = &orderedEdges.at(nextIdx);
+		pair<HalfEdge*, boundary>* nextEdge = &orderedEdges.at((i + 1) % numEdges);
 		pair<HalfEdge*, boundary> tmp;
 		tmp.first = currEdge->first;
 		tmp.second = currEdge->second;
@@ -617,14 +615,11 @@ void Voronoi::attachEdgesToBoundingBox(){
 			HalfEdge* B = new HalfEdge();
 
 			HalfEdge* in;
-			HalfEdge* out;
-			if (tmp.first->next){
+			if (tmp.first->site == currEdge->first->site){
 				in = tmp.first;
-				out = tmp.first->twin;
 			}
 			else{
 				in = tmp.first->twin;
-				out = tmp.first;
 			}
 
 			A->next = in;
@@ -646,19 +641,7 @@ void Voronoi::attachEdgesToBoundingBox(){
 		}
 
 		if (prevIn == nullptr){
-			if (nextEdge->first->next){
-				prevIn = nextEdge->first->twin;
-			}
-			else{
-				prevIn = nextEdge->first;
-			}
-
-			if (prevIn == currEdge->first->next){
-				prevIn = currEdge->first;
-			}
-			else{
-				prevIn = currEdge->first->twin;
-			}
+			prevIn = currEdge->first;
 		}
 
 		HalfEdge* A = new HalfEdge();
@@ -666,13 +649,13 @@ void Voronoi::attachEdgesToBoundingBox(){
 
 		HalfEdge* in;
 		HalfEdge* out;
-		if (nextEdge->first->next){
-			in = nextEdge->first->twin;
-			out = nextEdge->first;
+		if (nextEdge->first->site == currEdge->first->site){
+			in = nextEdge->first;
+			out = nextEdge->first->twin;
 		}
 		else{
-			in = nextEdge->first;;
-			out = nextEdge->first->twin;
+			in = nextEdge->first->twin;
+			out = nextEdge->first;
 		}
 
 		A->next = prevIn;
