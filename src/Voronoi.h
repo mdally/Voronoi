@@ -111,6 +111,7 @@ public:
 	Voronoi();
 	~Voronoi();
 	void setBounds(int bottomX, int topX, int leftY, int rightY);
+	void genRandomSites(int numSites, float maxVal);
 	void compute();
 	void relax();
 

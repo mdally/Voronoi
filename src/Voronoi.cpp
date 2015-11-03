@@ -33,6 +33,10 @@ void Voronoi::setBounds(int leftX, int rightX, int bottomY, int topY){
 	boundsSet = true;
 }
 
+void genRandomSites(int numSites, float maxVal){
+
+}
+
 void Voronoi::compute(){
 	//add all sites to event queue
 	//figure out bounding box if necessary
@@ -87,8 +91,8 @@ void Voronoi::compute(){
 	}
 
 	//trim vertices & edges that fall outside the box
-	trimOutsideEdges();
-	attachEdgesToBoundingBox();
+	//trimOutsideEdges();
+	//attachEdgesToBoundingBox();
 
 	//TODO: clean up any resources necessary
 }
