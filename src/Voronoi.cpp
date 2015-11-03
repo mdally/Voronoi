@@ -10,6 +10,8 @@ using std::pair;
 
 Point2 diagramCenter;
 
+#define _PRINT_BEACHLINE 1
+
 Voronoi::Voronoi(){
 	boundsSet = false;
 }
@@ -73,7 +75,10 @@ void Voronoi::compute(){
 		setBounds((int)floor(xLo), (int)ceil(xHi), (int)floor(yLo), (int)ceil(yHi));
 	}
 
-	//process event queue
+	//handle all sites at max Y value
+	processMaxYSites();
+
+	//process remaining event queue
 	while (!eventQueue.empty()){
 		event* e = eventQueue.top();
 		eventQueue.pop();
@@ -95,6 +100,75 @@ void Voronoi::compute(){
 	//attachEdgesToBoundingBox();
 
 	//TODO: clean up any resources necessary
+}
+
+void Voronoi::processMaxYSites() {
+	event* e = eventQueue.top();
+	double maxSiteY = e->sites[0]->p[1];
+	
+	vector<Site*> topSites;
+
+	while (e && e->sites[0]->p[1] == maxSiteY) {
+		topSites.push_back(e->sites[0]);
+		eventQueue.pop();
+		e = eventQueue.top();
+	}
+
+	for (Site* s : topSites) {
+		if (beachLine.root = nullptr) {
+			beachLineNode* root = new beachLineNode();
+			root->s1 = e->sites[0];
+
+			beachLine.root = root;
+		}
+		else {
+			beachLineNode* prev = beachLine.max(beachLine.root);
+
+			//replace the leaf with a subtree having 2 leaves like so:
+			//          (old, new)
+			//           /      \
+			//         old      new
+			Site* oldSite = prev->s1;
+			Site* newSite = e->sites[0];
+
+			beachLineNode* old_new = prev;
+			old_new->s2 = newSite;
+			old_new->left = new beachLineNode();
+			old_new->right = new beachLineNode();
+
+			beachLineNode* left = old_new->left;
+			left->s1 = oldSite;
+			left->parent = old_new;
+
+			beachLineNode* right = old_new->right;
+			right->s1 = newSite;
+			left->parent = old_new;
+
+#if _PRINT_BEACHLINE
+			beachLine.printLine();
+#endif
+
+			HalfEdge* A = new HalfEdge();
+			HalfEdge* B = new HalfEdge();
+			old_new->edge = A;
+
+			A->twin = B;
+			A->site = oldSite;
+			if (oldSite->edge == nullptr) {
+				oldSite->edge = A;
+			}
+
+			B->twin = A;
+			B->site = newSite;
+			if (newSite->edge == nullptr) {
+				newSite->edge = B;
+			}
+
+			edges.push_back(A);
+			edges.push_back(B);
+		}
+	}
+
 }
 
 void Voronoi::processSiteEvent(event* e){
@@ -149,7 +223,9 @@ void Voronoi::processSiteEvent(event* e){
 	oldArcRight->s1 = oldSite;
 	oldArcRight->parent = new_old;
 
-	//beachLine.printLine();
+#if _PRINT_BEACHLINE
+	beachLine.printLine();
+#endif
 
 	//create new half-edge records that will be traced by the new breakpoints
 	HalfEdge* A = new HalfEdge();
@@ -346,7 +422,9 @@ void Voronoi::processCircleEvent(event* e){
 	delete disappearing;
 	delete destroy;
 
-	//beachLine.printLine();
+#if _PRINT_BEACHLINE
+	beachLine.printLine();
+#endif
 
 	HalfEdge* A = new HalfEdge();
 	HalfEdge* B = new HalfEdge();

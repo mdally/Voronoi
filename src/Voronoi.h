@@ -124,6 +124,7 @@ private:
 	BeachLine beachLine;
 	std::vector<HalfEdge*> danglingEdges;
 
+	void processMaxYSites();
 	void processSiteEvent(event* e);
 	void processCircleEvent(event* e);
 

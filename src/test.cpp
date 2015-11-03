@@ -2,11 +2,11 @@
 #include <cstdlib>
 #include <vector>
 
-#define dimension 100000
+#define dimension 6
 #define numSites 100
 
 bool sitesOrdered(Site& s1, Site& s2){
-	if (s1.p[1] < s2.p[1])
+	if (s1.p[1] > s2.p[1])
 		return true;
 	if (s1.p[1] == s2.p[1] && s1.p[0] < s2.p[0])
 		return true;
@@ -24,11 +24,32 @@ int main(int argc, char** argv){
 	Site s;
 	s.edge = NULL;
 
+	/*
 	for (int i = 0; i < numSites; ++i){
 		s.p[0] = (rand() % (dimension-1)) + 1;
 		s.p[1] = (rand() % (dimension-1)) + 1;
 		sites.push_back(s);
 	}
+	*/
+	s.p[0] = 1;
+	s.p[1] = 1;
+	sites.push_back(s);
+	s.p[1] = 3;
+	sites.push_back(s);
+	s.p[1] = 5;
+	sites.push_back(s);
+	s.p[0] = 3;
+	s.p[1] = 1;
+	sites.push_back(s);
+	s.p[1] = 5;
+	sites.push_back(s);
+	s.p[0] = 5;
+	s.p[1] = 1;
+	sites.push_back(s);
+	s.p[1] = 3;
+	sites.push_back(s);
+	s.p[1] = 5;
+	sites.push_back(s);
 
 	std::sort(sites.begin(), sites.end(), sitesOrdered);
 	diagram.sites.push_back(sites[0]);
