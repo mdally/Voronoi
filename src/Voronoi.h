@@ -93,9 +93,15 @@ public:
 		if (p1[1] < p2[1]){
 			return true;
 		}
-		if (p1[1] == p2[1] && p1[0] > p2[0]){
-			return true;
+		if (p1[1] == p2[1]){
+			if (p1[0] > p2[0]){
+				return true;
+			}
+			if (p1[0] == p2[0] && e1->type == SITE && e2->type == CIRCLE){
+				return true;
+			}
 		}
+
 		return false;
 	}
 };

@@ -115,9 +115,9 @@ void Voronoi::processMaxYSites() {
 	}
 
 	for (Site* s : topSites) {
-		if (beachLine.root = nullptr) {
+		if (beachLine.root == nullptr) {
 			beachLineNode* root = new beachLineNode();
-			root->s1 = e->sites[0];
+			root->s1 = s;
 
 			beachLine.root = root;
 		}
@@ -129,7 +129,7 @@ void Voronoi::processMaxYSites() {
 			//           /      \
 			//         old      new
 			Site* oldSite = prev->s1;
-			Site* newSite = e->sites[0];
+			Site* newSite = s;
 
 			beachLineNode* old_new = prev;
 			old_new->s2 = newSite;
@@ -142,7 +142,7 @@ void Voronoi::processMaxYSites() {
 
 			beachLineNode* right = old_new->right;
 			right->s1 = newSite;
-			left->parent = old_new;
+			right->parent = old_new;
 
 #if _PRINT_BEACHLINE
 			beachLine.printLine();
@@ -173,20 +173,45 @@ void Voronoi::processMaxYSites() {
 
 void Voronoi::processSiteEvent(event* e){
 	//insert into beach line:
-	if (beachLine.root == nullptr){
+	/*if (beachLine.root == nullptr){
 		beachLineNode* root = new beachLineNode();
 		root->s1 = e->sites[0];
 
 		beachLine.root = root;
 
 		return;
-	}
+	}*/
 
 	//search for arc in line vertically above new site
 	//if arc has a circle event, invalidate it
 	beachLineNode* above = beachLine.arcAbove(e->sites[0]);
 	if (above->circleEvent){
 		above->circleEvent->falseAlarm = true;
+	}
+
+	//special case where new site's arc hits an existing vertex
+	beachLineNode* aboveBP = beachLine.successor(above);
+	Vertex* BPvertex;
+	if (aboveBP){
+		if (aboveBP->edge->origin){
+			BPvertex = aboveBP->edge->origin;
+		}
+		else{
+			BPvertex = aboveBP->edge->twin->origin;
+		}
+		
+		Point2 BPorigin;
+		if (BPvertex){
+			BPorigin = BPvertex->p;
+
+			Point2 intersect1, intersect2;
+			findParabolaIntersections(above->s1->p, e->sites[0]->p,
+				currentSweeplineY, intersect1, intersect2);
+
+			if (intersect1 == BPorigin){
+				int i = 0;
+			}
+		}
 	}
 
 	//replace the leaf with a subtree having 3 leaves like so:
@@ -332,11 +357,23 @@ void findParabolaIntersections(Point2& focus1, Point2& focus2, double directrixH
 	double b = b2 - b1;
 	double c = c2 - c1;
 
-	intersection1[0] = (-b - sqrt(b*b - 4.0*a*c)) / (2.0*a);
-	intersection2[0] = (-b + sqrt(b*b - 4.0*a*c)) / (2.0*a);
+	if (bmc1 == 0.0){
+		double x = focus1[0];
+		intersection1[0] = intersection2[0] = x;
+		intersection1[1] = intersection2[1] = a2*x*x + b2*x + c2;
+	}
+	else if (bmc2 == 0.0){
+		double x = focus2[0];
+		intersection1[0] = intersection2[0] = focus2[0];
+		intersection1[1] = intersection2[1] = a1*x*x + b1*x + c1;
+	}
+	else{
+		intersection1[0] = (-b - sqrt(b*b - 4.0*a*c)) / (2.0*a);
+		intersection2[0] = (-b + sqrt(b*b - 4.0*a*c)) / (2.0*a);
 
-	intersection1[1] = a1*intersection1[0]*intersection1[0] + b1*intersection1[0] + c1;
-	intersection2[1] = a2*intersection2[0]*intersection2[0] + b2*intersection2[0] + c2;
+		intersection1[1] = a1*intersection1[0] * intersection1[0] + b1*intersection1[0] + c1;
+		intersection2[1] = a2*intersection2[0] * intersection2[0] + b2*intersection2[0] + c2;
+	}
 }
 
 
@@ -526,17 +563,25 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 	Point2 p2 = breakpoint->s2->p;
 	Point2 c = circleCenter->p;
 
+	Point2* target;
 	Point2 intersect1;
 	Point2 intersect2;
 
-	findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
-
-	Point2* target = &intersect1;
-	if (moveSweepline ^ (c.distanceTo(intersect1) < c.distanceTo(intersect2))){
-		target = &intersect2;
+	if (p1[1] == p2[1]){
+		target = &intersect1;
+		intersect1[0] = (p1[0] + p2[0]) / 2.0;
+		intersect1[1] = (p1[1] + p2[1]) / 2.0;
 	}
-	if (moveSweepline){
-		findParabolaIntersections(p1, p2, currentSweeplineY - 1, intersect1, intersect2);
+	else{
+		findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
+
+		target = &intersect1;
+		if (moveSweepline ^ (c.distanceTo(intersect1) < c.distanceTo(intersect2))){
+			target = &intersect2;
+		}
+		if (moveSweepline){
+			findParabolaIntersections(p1, p2, currentSweeplineY - 1, intersect1, intersect2);
+		}
 	}
 
 	double angle1 = signedAngleBetweenVectors(*target-c, p1-c);
