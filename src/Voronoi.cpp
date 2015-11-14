@@ -189,6 +189,7 @@ void Voronoi::processSiteEvent(event* e){
 		above->circleEvent->falseAlarm = true;
 	}
 
+	/*
 	//special case where new site's arc hits an existing vertex
 	beachLineNode* aboveBP = beachLine.successor(above);
 	Vertex* BPvertex;
@@ -213,65 +214,149 @@ void Voronoi::processSiteEvent(event* e){
 			}
 		}
 	}
+	*/
 
-	//replace the leaf with a subtree having 3 leaves like so:
-	//          (new, old)
-	//           /      \
-	//   (old, new)     old
-	//    /      \
-	//  old      new
-	Site* oldSite = above->s1;
-	Site* newSite = e->sites[0];
+	beachLineNode* newArc;
+	if (above->s2 == nullptr) {
+		//replace the leaf with a subtree having 3 leaves like so:
+		//          (new, old)
+		//           /      \
+		//   (old, new)     old
+		//    /      \
+		//  old      new
+		Site* oldSite = above->s1;
+		Site* newSite = e->sites[0];
 
-	beachLineNode* new_old = above;
-	new_old->s1 = newSite;
-	new_old->s2 = oldSite;
-	new_old->left = new beachLineNode();
-	new_old->right = new beachLineNode();
+		beachLineNode* new_old = above;
+		new_old->s1 = newSite;
+		new_old->s2 = oldSite;
+		new_old->left = new beachLineNode();
+		new_old->right = new beachLineNode();
 
-	beachLineNode* old_new = above->left;
-	old_new->s1 = oldSite;
-	old_new->s2 = newSite;
-	old_new->parent = above;
-	old_new->left = new beachLineNode();
-	old_new->right = new beachLineNode();
+		beachLineNode* old_new = above->left;
+		old_new->s1 = oldSite;
+		old_new->s2 = newSite;
+		old_new->parent = above;
+		old_new->left = new beachLineNode();
+		old_new->right = new beachLineNode();
 
-	beachLineNode* oldArcLeft = old_new->left;
-	oldArcLeft->s1 = oldSite;
-	oldArcLeft->parent = old_new;
+		beachLineNode* oldArcLeft = old_new->left;
+		oldArcLeft->s1 = oldSite;
+		oldArcLeft->parent = old_new;
 
-	beachLineNode* newArc = old_new->right;
-	newArc->s1 = newSite;
-	newArc->parent = old_new;
+		newArc = old_new->right;
+		newArc->s1 = newSite;
+		newArc->parent = old_new;
 
-	beachLineNode* oldArcRight = new_old->right;
-	oldArcRight->s1 = oldSite;
-	oldArcRight->parent = new_old;
+		beachLineNode* oldArcRight = new_old->right;
+		oldArcRight->s1 = oldSite;
+		oldArcRight->parent = new_old;
 
 #if _PRINT_BEACHLINE
-	beachLine.printLine();
+		beachLine.printLine();
 #endif
 
-	//create new half-edge records that will be traced by the new breakpoints
-	HalfEdge* A = new HalfEdge();
-	HalfEdge* B = new HalfEdge();
-	new_old->edge = A;
-	old_new->edge = A;
+		//create new half-edge records that will be traced by the new breakpoint
+		HalfEdge* A = new HalfEdge();
+		HalfEdge* B = new HalfEdge();
+		new_old->edge = A;
+		old_new->edge = A;
 
-	A->twin = B;
-	A->site = oldSite;
-	if (oldSite->edge == nullptr){
-		oldSite->edge = A;
+		A->twin = B;
+		A->site = oldSite;
+		if (oldSite->edge == nullptr) {
+			oldSite->edge = A;
+		}
+
+		B->twin = A;
+		B->site = newSite;
+		if (newSite->edge == nullptr) {
+			newSite->edge = B;
+		}
+
+		edges.push_back(A);
+		edges.push_back(B);
 	}
+	else { //new site is directly above an existing breakpoint in the beachline
+		//update beachline like so:
+		//      (left, right)                  (left, new)
+		//       /         \                    /       \
+		//      ...       ...         -->      ...     ...
+		//      /           \                  /         \
+		//   left           right           left        (new, right)
+		//                                               /        \
+		//                                             new        right
 
-	B->twin = A;
-	B->site = newSite;
-	if (newSite->edge == nullptr){
-		newSite->edge = B;
+		beachLineNode* rightArc = beachLine.successor(above);
+		HalfEdge* prevEdge = above->edge;
+		Site* newSite = e->sites[0];
+		
+		above->s2 = newSite;
+
+		rightArc->s2 = rightArc->s1;
+		rightArc->s1 = newSite;
+		rightArc->left = new beachLineNode();
+		rightArc->right = new beachLineNode();
+
+		newArc = rightArc->left;
+		newArc->s1 = newSite;
+		newArc->parent = rightArc;
+
+		beachLineNode* newRightArc = rightArc->right;
+		newRightArc->s1 = rightArc->s2;
+		newRightArc->parent = rightArc;
+
+		//add new vertex
+		Point2 ixt1, ixt2;
+		findParabolaIntersections(newSite->p, newRightArc->s1->p, currentSweeplineY, ixt1, ixt2);
+
+		Vertex* v = new Vertex(ixt1);
+		vertices.push_back(v);
+
+		//join existing edge to vertex
+		if (prevEdge->site->p[0] < prevEdge->twin->site->p[0]) {
+			prevEdge->origin = v;
+		}
+		else {
+			prevEdge->twin->origin = v;
+		}
+
+		HalfEdge* sixEdges[6] = { 0 };
+		Site* involvedSites[3] = {above->s1, above->s2, rightArc->s2};
+		matchEdges(prevEdge, sixEdges, involvedSites);
+		matchEdges(prevEdge->twin, sixEdges, involvedSites);
+
+		//add two new edges for new breakpoints
+		HalfEdge* A = new HalfEdge();
+		HalfEdge* B = new HalfEdge();
+		A->twin = B;
+		B->twin = A;
+		A->site = above->s1;
+		B->site = above->s2;
+		B->origin = v;
+
+		matchEdges(A, sixEdges, involvedSites);
+		matchEdges(B, sixEdges, involvedSites);
+
+		A = new HalfEdge();
+		B = new HalfEdge();
+		A->twin = B;
+		B->twin = A;
+		A->site = rightArc->s1;
+		B->site = rightArc->s2;
+		B->origin = v;
+
+		matchEdges(A, sixEdges, involvedSites);
+		matchEdges(B, sixEdges, involvedSites);
+
+		//set 6 half-edges' next pointers
+		for (int i = 0; i < 3; ++i) {
+			if (sixEdges[i * 2]->origin == v)
+				sixEdges[i * 2 + 1]->next = sixEdges[i * 2];
+			else
+				sixEdges[i * 2]->next = sixEdges[i * 2 + 1];
+		}
 	}
-
-	edges.push_back(A);
-	edges.push_back(B);
 
 	//check the two triplets of consecutive arcs for which the new arc is either the new left
 	//or new right arc to see if the breakpoints converge. If so, create a new circle event
@@ -413,10 +498,10 @@ void Voronoi::processCircleEvent(event* e){
 
 	HalfEdge* faceEdges[6] = { 0 };
 
-	matchEdges(breakpoint1->edge, faceEdges, e);
-	matchEdges(breakpoint1->edge->twin, faceEdges, e);
-	matchEdges(breakpoint2->edge, faceEdges, e);
-	matchEdges(breakpoint2->edge->twin, faceEdges, e);
+	matchEdges(breakpoint1->edge, faceEdges, e->sites);
+	matchEdges(breakpoint1->edge->twin, faceEdges, e->sites);
+	matchEdges(breakpoint2->edge, faceEdges, e->sites);
+	matchEdges(breakpoint2->edge->twin, faceEdges, e->sites);
 
 	//fixup beach line: delete disappearing arc, merge bordering breakpoints, add new half-edges
 	beachLineNode* merge;
@@ -486,8 +571,8 @@ void Voronoi::processCircleEvent(event* e){
 
 	attachEdgeToCircleCenter(merge, center, true);
 
-	matchEdges(A, faceEdges, e);
-	matchEdges(B, faceEdges, e);
+	matchEdges(A, faceEdges, e->sites);
+	matchEdges(B, faceEdges, e->sites);
 
 	for (int i = 0; i < 3; ++i){
 		if (faceEdges[i * 2]->origin == center)
@@ -606,9 +691,9 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 	}
 }
 
-void Voronoi::matchEdges(HalfEdge* edge, HalfEdge* faces[], event* circleEvent){
+void Voronoi::matchEdges(HalfEdge* edge, HalfEdge* faces[], Site* sites[]){
 	for (int i = 0; i < 3; ++i){
-		if (edge->site == circleEvent->sites[i]){
+		if (edge->site == sites[i]){
 			if (!faces[2 * i]){
 				faces[2 * i] = edge;
 			}

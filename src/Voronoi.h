@@ -136,7 +136,7 @@ private:
 
 	void checkArcTripletForCircleEvent(nodeTriplet& sites);
 	void attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circleCenter, bool moveSweepline);
-	void matchEdges(HalfEdge* edge, HalfEdge* faceEdges[], event* circleEvent);
+	void matchEdges(HalfEdge* edge, HalfEdge* faceEdges[], Site* sites[]);
 
 	inline bool breakPointsConverge(nodeTriplet& sites);
 	inline bool siteToLeft(Site* s1, Site* s2);

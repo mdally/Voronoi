@@ -24,7 +24,7 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 
 		if ((*p1)[1] == (*p2)[1]){
 			intersect1[0] = ((*p1)[0] + (*p2)[0]) / 2.0;
-			intersect1[1] = ((*p1)[1] + (*p2)[1]) / 2.0;
+			intersect1[1] = ((*p1)[1] + (*p2)[1]) / 2.0;  //should just be (*p1)[1]??
 			compare = &intersect1;
 		}
 		else{
@@ -64,6 +64,9 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 			}
 		}
 		
+		if (s->p[0] == (*compare)[0]) {
+			return arc;
+		}
 		if (s->p[0] > (*compare)[0]){
 			arc = arc->right;
 		}
