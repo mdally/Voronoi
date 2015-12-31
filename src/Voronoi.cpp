@@ -4,6 +4,7 @@
 #include <limits>
 #include <utility>
 #include <algorithm>
+#include <cassert>
 using std::priority_queue;
 using std::vector;
 using std::pair;
@@ -93,6 +94,8 @@ void Voronoi::compute(){
 			}
 		}
 		delete e;
+
+		verifyDiagram();
 	}
 
 	//trim vertices & edges that fall outside the box
@@ -286,9 +289,11 @@ void Voronoi::processSiteEvent(event* e){
 		//join existing edge to vertex
 		if (prevEdge->site->p[0] < prevEdge->twin->site->p[0]) {
 			prevEdge->origin = v;
+			v->leaving = prevEdge;
 		}
 		else {
 			prevEdge->twin->origin = v;
+			v->leaving = prevEdge->twin;
 		}
 
 		HalfEdge* sixEdges[6] = { 0 };
@@ -891,6 +896,22 @@ void Voronoi::findIntersectionWithBoundaries(Point2& src, Vector2& direction, do
 		if (tmp > 0 && tmp < t){
 			t = tmp;
 			b = TOP;
+		}
+	}
+}
+
+void Voronoi::verifyDiagram() {
+	for (Vertex* v : vertices) {
+		assert(v->leaving->origin == v);
+	}
+
+	for (HalfEdge* e : edges) {
+		HalfEdge* tmp = e;
+		while (tmp->next) {
+			assert(tmp->site == tmp->next->site);
+			assert(tmp->next->origin == tmp->twin->origin);
+
+			tmp = tmp->next;
 		}
 	}
 }

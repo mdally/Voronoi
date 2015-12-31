@@ -1,3 +1,5 @@
 Debug/
 enc_temp_folder/
 *.TMP
+Voronoi.VC.opendb
+Voronoi.sdf

@@ -130,6 +130,8 @@ private:
 	BeachLine beachLine;
 	std::vector<HalfEdge*> danglingEdges;
 
+	void verifyDiagram();
+
 	void processMaxYSites();
 	void processSiteEvent(event* e);
 	void processCircleEvent(event* e);
