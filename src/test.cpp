@@ -1,9 +1,6 @@
 #include "Voronoi.h"
 #include <cstdlib>
 
-//#define dimension 20000000
-//#define numSites 10000
-
 bool sitesOrdered(Site& s1, Site& s2) {
 	if (s1.p[1] < s2.p[1])
 		return true;
@@ -19,6 +16,7 @@ void randomSites(std::vector<Site>& sites, Voronoi* diagram, int dimension, int 
 	Site s;
 	s.edge = NULL;
 
+	srand(1);
 	for (int i = 0; i < numSites; ++i) {
 		s.p[0] = (rand() / (double)RAND_MAX)*dimension;
 		s.p[1] = (rand() / (double)RAND_MAX)*dimension;
@@ -45,12 +43,27 @@ void siteBreakpointIntersect(std::vector<Site>& sites, Voronoi* diagram) {
 	s.p[1] = 5;				sites.push_back(s);
 }
 
+void square(std::vector<Site>& sites, Voronoi* diagram){
+	diagram->setBounds(0, 4, 0, 4);
+
+	Site s;
+	s.edge = NULL;
+
+	s.p[1] = 1; s.p[0] = 1; sites.push_back(s);
+	s.p[1] = 3;				sites.push_back(s);
+
+	s.p[1] = 1; s.p[0] = 3; sites.push_back(s);
+	s.p[1] = 3;				sites.push_back(s);
+}
+
 int main(int argc, char** argv) {
 	Voronoi* diagram = new Voronoi();
 
 	std::vector<Site> sites;
-
-	siteBreakpointIntersect(sites, diagram);
+	
+	square(sites, diagram);
+	//siteBreakpointIntersect(sites, diagram);
+	//randomSites(sites, diagram, 100, 22);
 
 	std::sort(sites.begin(), sites.end(), sitesOrdered);
 	diagram->sites.push_back(sites[0]);

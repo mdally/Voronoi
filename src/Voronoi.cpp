@@ -49,6 +49,8 @@ void Voronoi::compute(){
 	yLo = sites[0].p[1] - 1;
 	yHi = sites[0].p[1] + 1;
 
+	//HalfEdge** junk = &(sites[20].edge);
+
 	int numSites = sites.size();
 	for (int i = 0; i < numSites; ++i){
 		Site* s = &(sites[i]);
@@ -94,13 +96,13 @@ void Voronoi::compute(){
 			}
 		}
 		delete e;
-
-		verifyDiagram();
 	}
 
 	//trim vertices & edges that fall outside the box
 	//trimOutsideEdges();
 	//attachEdgesToBoundingBox();
+
+	//verifyDiagram();
 
 	//TODO: clean up any resources necessary
 }
@@ -307,24 +309,42 @@ void Voronoi::processSiteEvent(event* e){
 		A->twin = B;
 		B->twin = A;
 		A->site = leftBP->s1;
+		if (A->site->edge == nullptr){
+			A->site->edge = A;
+		}
 		B->site = leftBP->s2;
+		if (B->site->edge == nullptr){
+			B->site->edge = B;
+		}
 		B->origin = v;
 
 		leftBP->edge = A;
 		matchEdges(A, sixEdges, involvedSites);
 		matchEdges(B, sixEdges, involvedSites);
 
+		edges.push_back(A);
+		edges.push_back(B);
+
 		A = new HalfEdge();
 		B = new HalfEdge();
 		A->twin = B;
 		B->twin = A;
 		A->site = rightBP->s1;
+		if (A->site->edge == nullptr){
+			A->site->edge = A;
+		}
 		B->site = rightBP->s2;
+		if (B->site->edge == nullptr){
+			B->site->edge = B;
+		}
 		B->origin = v;
 
 		rightBP->edge = A;
 		matchEdges(A, sixEdges, involvedSites);
 		matchEdges(B, sixEdges, involvedSites);
+
+		edges.push_back(A);
+		edges.push_back(B);
 
 		//set 6 half-edges' next pointers
 		for (int i = 0; i < 3; ++i) {
@@ -762,6 +782,7 @@ void Voronoi::attachEdgesToBoundingBox(){
 				v->leaving = e;
 				orderedEdges.push_back(pair<HalfEdge*, boundary>(e, b));
 			}
+			assert(v->leaving->site != nullptr);
 		}
 		else{
 			delete e->twin;
@@ -902,18 +923,40 @@ void Voronoi::findIntersectionWithBoundaries(Point2& src, Vector2& direction, do
 
 void Voronoi::verifyDiagram() {
 	for (Vertex* v : vertices) {
-		assert(v->leaving->origin == v);
+		bool b = (v->leaving->origin == v);
+		assert(b);
 	}
 
 	for (HalfEdge* e : edges) {
 		HalfEdge* tmp = e;
-		while (tmp->next) {
-			assert(tmp->site == tmp->next->site);
-			assert(tmp->next->origin == tmp->twin->origin);
+		HalfEdge* first = tmp;
+		while (tmp->next && tmp != first) {
+			assert((tmp->site == tmp->next->site));
+			assert((tmp->next->origin == tmp->twin->origin));
 
 			tmp = tmp->next;
 		}
 	}
+
+	int i = 0;
+	for (Site& s : sites){
+		HalfEdge* e = s.edge;
+		HalfEdge* first = e;
+
+		bool closed = false;
+		while (e){
+			assert((e->site == &s));
+			e = e->next;
+
+			if (e == first){
+				closed = true;
+				break;
+			}
+		}
+		assert(closed);
+		++i;
+	}
+
 }
 
 //TODO
