@@ -95,3 +95,4 @@ bool Vector2::operator!=(const Vector2 &v) const {
 void Vector2::print() const {
     std::cout << x << " " << y << "\n";
 }
+
