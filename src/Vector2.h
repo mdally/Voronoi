@@ -2,6 +2,7 @@
 #define _VECTOR2_h
 
 #include <iostream>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 class Vector2 {

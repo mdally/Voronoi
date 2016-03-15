@@ -67,6 +67,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\DCEL.h" />
+    <ClInclude Include="src\Geometry.h" />
     <ClInclude Include="src\Point2.h" />
     <ClInclude Include="src\Vector2.h" />
     <ClInclude Include="src\Voronoi.h" />
@@ -74,6 +75,7 @@
   <ItemGroup>
     <ClCompile Include="src\BeachLine.cpp" />
     <ClCompile Include="src\DCEL.cpp" />
+    <ClCompile Include="src\Geometry.cpp" />
     <ClCompile Include="src\Point2.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\Vector2.cpp" />
