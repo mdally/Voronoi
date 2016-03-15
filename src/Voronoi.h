@@ -141,15 +141,12 @@ private:
 	void matchEdges(HalfEdge* edge, HalfEdge* faceEdges[], Site* sites[]);
 
 	inline bool breakPointsConverge(nodeTriplet& sites);
-	inline bool siteToLeft(Site* s1, Site* s2);
-	Point2 circumcenter(nodeTriplet& sites);
-	friend void findParabolaIntersections(Point2& focus1, Point2& focus2, double directrixY, 
-		Point2& intersection1, Point2& intersection2);
-	inline double signedAngleBetweenVectors(Vector2& v1, Vector2& v2);
 
 	void trimOutsideEdges();
 	void attachEdgesToBoundingBox();
 	void findIntersectionWithBoundaries(Point2& src, Vector2& direction, double& t, boundary& b);
+
+	friend class BeachLine;
 };
 
 #endif

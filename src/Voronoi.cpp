@@ -1,4 +1,5 @@
 #include "Voronoi.h"
+#include "Geometry.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <limits>
@@ -129,10 +130,12 @@ void Voronoi::processMaxYSites() {
 		else {
 			beachLineNode* prev = beachLine.max(beachLine.root);
 
-			//replace the leaf with a subtree having 2 leaves like so:
-			//          (old, new)
-			//           /      \
-			//         old      new
+			/****************************************************************************
+			 * replace the leaf with a subtree having 2 leaves like so:
+			 *          (old, new)
+			 *           /      \
+			 *         old      new
+			 ****************************************************************************/
 			Site* oldSite = prev->s1;
 			Site* newSite = s;
 
@@ -186,12 +189,14 @@ void Voronoi::processSiteEvent(event* e){
 
 	beachLineNode* newArc;
 	if (above->s2 == nullptr) {
-		//replace the leaf with a subtree having 3 leaves like so:
-		//          (new, old)
-		//           /      \
-		//   (old, new)     old
-		//    /      \
-		//  old      new
+		/****************************************************************************
+		 * replace the leaf with a subtree having 3 leaves like so:
+		 *          (new, old)
+		 *           /      \
+		 *   (old, new)     old
+		 *    /      \
+		 *  old      new
+		 ****************************************************************************/
 		Site* oldSite = above->s1;
 		Site* newSite = e->sites[0];
 
@@ -253,14 +258,16 @@ void Voronoi::processSiteEvent(event* e){
 			rightArc->circleEvent->falseAlarm = true;
 		}
 
-		//update beachline like so:
-		//      (left, right)                    (left, new)
-		//      /           \                    /         \
-		//    ...           ...       -->      ...         ...
-		//    /               \                /             \
-		// left               right         left             (new, right)
-		//                                                   /          \
-		//                                                 new          right
+		/****************************************************************************
+		 * update beachline like so:
+		 *      (left, right)                    (left, new)
+		 *      /           \                    /         \
+		 *    ...           ...       -->      ...         ...
+		 *    /               \                /             \
+		 * left               right         left             (new, right)
+		 *                                                   /          \
+		 *                                                 new          right
+		 ****************************************************************************/
 		beachLineNode* rightBP = rightArc;
 		beachLineNode* leftBP = above;
 		HalfEdge* prevEdge = leftBP->edge;
@@ -363,8 +370,11 @@ void Voronoi::processSiteEvent(event* e){
 	//or new right arc to see if the breakpoints converge. If so, create a new circle event
 	//and add it to the queue. add pointers from the middle node of the triplet to 
 	//the new event
-	checkArcTripletForCircleEvent(beachLine.leftTriplet(newArc));
-	checkArcTripletForCircleEvent(beachLine.rightTriplet(newArc));
+	nodeTriplet left = beachLine.leftTriplet(newArc);
+	nodeTriplet right = beachLine.rightTriplet(newArc);
+
+	checkArcTripletForCircleEvent(left);
+	checkArcTripletForCircleEvent(right);
 }
 
 void Voronoi::checkArcTripletForCircleEvent(nodeTriplet& sites){
@@ -376,7 +386,7 @@ void Voronoi::checkArcTripletForCircleEvent(nodeTriplet& sites){
 			e->sites[1] = sites.n2->s1;
 			e->sites[2] = sites.n3->s1;
 			e->disappearingArc = sites.n2;
-			e->circleCenter = circumcenter(sites);
+			e->circleCenter = circumcenter(sites.n1->s1->p, sites.n2->s1->p, sites.n3->s1->p);
 			e->falseAlarm = false;
 			e->y = e->circleCenter[1] - e->circleCenter.distanceTo(e->sites[0]->p);
 
@@ -399,75 +409,6 @@ inline bool Voronoi::breakPointsConverge(nodeTriplet& sites){
 	double decision = -(A[1]*B[0]) + (A[0]*B[1]) + (A[1]*C[0]) - (B[1]*C[0]) - (A[0]*C[1]) + (B[0]*C[1]);
 
 	return (decision < 0) ? true : false;
-}
-
-inline bool Voronoi::siteToLeft(Site* s1, Site* s2){
-	if (s1->p[0] < s2->p[0] ||
-		s1->p[0] == s2->p[0] && s1->p[1] < s2->p[1])
-		return true;
-	return false;
-}
-
-Point2 Voronoi::circumcenter(nodeTriplet& sites){
-	Point2 A = sites.n1->s1->p;
-	Point2 B = sites.n2->s1->p;
-	Point2 C = sites.n3->s1->p;
-
-	double dA = A.distanceFromOriginSquared();
-	double dB = B.distanceFromOriginSquared();
-	double dC = C.distanceFromOriginSquared();
-
-	double denom = 2.0 * (A[0]*(C[1] - B[1]) + B[0]*(A[1] - C[1]) + C[0]*(B[1] - A[1]));
-
-	Point2 center;
-	center[0] = (dA*(C[1] - B[1]) + dB*(A[1] - C[1]) + dC*(B[1] - A[1])) / denom;
-	center[1] = -(dA*(C[0] - B[0]) + dB*(A[0] - C[0]) + dC*(B[0] - A[0])) / denom;
-
-	return center;
-}
-
-void findParabolaIntersections(Point2& focus1, Point2& focus2, double directrixHeight,
-	Point2& intersection1, Point2& intersection2){
-
-	double bmc1 = focus1[1] - directrixHeight;
-	double a1 = 1 / (2.0*bmc1);
-	double b1 = -focus1[0] / bmc1;
-	double c1 = (focus1[0]*focus1[0] + focus1[1]*focus1[1] - directrixHeight*directrixHeight) / (2.0*bmc1);
-
-	double bmc2 = focus2[1] - directrixHeight;
-	double a2 = 1 / (2.0*bmc2);
-	double b2 = -focus2[0] / bmc2;
-	double c2 = (focus2[0]*focus2[0] + focus2[1]*focus2[1] - directrixHeight*directrixHeight) / (2.0*bmc2);
-
-	double a = a2 - a1;
-	double b = b2 - b1;
-	double c = c2 - c1;
-
-	if (bmc1 == 0.0){
-		double x = focus1[0];
-		intersection1[0] = intersection2[0] = x;
-		intersection1[1] = intersection2[1] = a2*x*x + b2*x + c2;
-	}
-	else if (bmc2 == 0.0){
-		double x = focus2[0];
-		intersection1[0] = intersection2[0] = focus2[0];
-		intersection1[1] = intersection2[1] = a1*x*x + b1*x + c1;
-	}
-	else{
-		intersection1[0] = (-b - sqrt(b*b - 4.0*a*c)) / (2.0*a);
-		intersection2[0] = (-b + sqrt(b*b - 4.0*a*c)) / (2.0*a);
-
-		intersection1[1] = a1*intersection1[0] * intersection1[0] + b1*intersection1[0] + c1;
-		intersection2[1] = a2*intersection2[0] * intersection2[0] + b2*intersection2[0] + c2;
-	}
-}
-
-
-inline double Voronoi::signedAngleBetweenVectors(Vector2& v1, Vector2& v2){
-	double angle = atan2(v2[1], v2[0]) - atan2(v1[1], v1[0]);
-	if (angle < 0) angle += 2 * M_PI;
-	
-	return angle;
 }
 
 void Voronoi::processCircleEvent(event* e){
@@ -584,8 +525,11 @@ void Voronoi::processCircleEvent(event* e){
 
 	//check the new triple of consecutive arcs that has the former left neighbor of the deleted arc
 	//as its middle arc for a circle event. Same for former right neighbor
-	checkArcTripletForCircleEvent(beachLine.leftTriplet(prevArc));
-	checkArcTripletForCircleEvent(beachLine.rightTriplet(nextArc));
+	nodeTriplet left = beachLine.leftTriplet(prevArc);
+	nodeTriplet right = beachLine.rightTriplet(nextArc);
+
+	checkArcTripletForCircleEvent(left);
+	checkArcTripletForCircleEvent(right);
 
 	vertices.push_back(center);
 }
@@ -670,8 +614,12 @@ void Voronoi::attachEdgeToCircleCenter(beachLineNode* breakpoint, Vertex* circle
 		}
 	}
 
-	double angle1 = signedAngleBetweenVectors(*target-c, p1-c);
-	double angle2 = signedAngleBetweenVectors(*target-c, p2-c);
+	Vector2 vT = *target-c;
+	Vector2 v1 = p1-c;
+	Vector2 v2 = p2-c;
+
+	double angle1 = Vector2::signedAngle(vT, v1);
+	double angle2 = Vector2::signedAngle(vT, v2);
 
 	Site* originFace = breakpoint->s1;
 	if (angle2 < angle1){
@@ -706,7 +654,7 @@ void Voronoi::matchEdges(HalfEdge* edge, HalfEdge* faces[], Site* sites[]){
 	}
 }
 
-bool orderedClockwise(pair<HalfEdge*, boundary>& e1, pair<HalfEdge*, boundary>& e2){
+bool orderedClockwise(const pair<HalfEdge*, boundary>& e1, const pair<HalfEdge*, boundary>& e2){
 	Vector2 direction1 = e1.first->origin->p - diagramCenter;
 	Vector2 direction2 = e2.first->origin->p - diagramCenter;
 
@@ -752,8 +700,12 @@ void Voronoi::attachEdgesToBoundingBox(){
 			Point2 intersect1, intersect2;
 			findParabolaIntersections(p1, p2, currentSweeplineY, intersect1, intersect2);
 
-			double angle1 = signedAngleBetweenVectors(intersect1 - src, p1 - src);
-			double angle2 = signedAngleBetweenVectors(intersect1 - src, p2 - src);
+			Vector2 vIxt = intersect1 - src;
+			Vector2 v1 = p1-src;
+			Vector2 v2 = p2-src;
+
+			double angle1 = Vector2::signedAngle(vIxt, v1);
+			double angle2 = Vector2::signedAngle(vIxt, v2);
 			Point2 target;
 			if (angle1 < angle2){
 				target = intersect1;

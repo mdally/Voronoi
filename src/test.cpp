@@ -1,7 +1,8 @@
 #include "Voronoi.h"
 #include <cstdlib>
+#include <algorithm>
 
-bool sitesOrdered(Site& s1, Site& s2) {
+bool sitesOrdered(const Site& s1, const Site& s2) {
 	if (s1.p[1] < s2.p[1])
 		return true;
 	if (s1.p[1] == s2.p[1] && s1.p[0] < s2.p[0])

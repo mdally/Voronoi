@@ -1,4 +1,5 @@
 #include "Voronoi.h"
+#include "Geometry.h"
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -28,15 +29,12 @@ beachLineNode* BeachLine::arcAbove(Site* s){
 			compare = &intersect1;
 		}
 		else{
-			Point2* lower;
 			bool lowerFirst;
 
 			if ((*p1)[1] < (*p2)[1]){
-				lower = p1;
 				lowerFirst = true;
 			}
 			else{
-				lower = p2;
 				lowerFirst = false;
 			}
 
