@@ -3,6 +3,7 @@
 
 #include "Vector2.h"
 #include <iostream>
+#include <sstream>
 
 class Point2{
 public:
@@ -43,7 +44,9 @@ inline Point2 lerp( const Point2& p0, const Point2& p1, double dT ){
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Point2& p){
-    os << "(" << p[0] << ", " << p[1] << ")";
+    std::stringstream ss;
+    ss << "(" << p[0] << ", " << p[1] << ")";
+    os << ss.str();
     return os;
 }
 

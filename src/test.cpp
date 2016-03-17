@@ -1,6 +1,9 @@
 #include "Voronoi.h"
 #include <cstdlib>
 #include <algorithm>
+#include <iostream>
+using std::cout;
+using std::endl;
 
 bool sitesOrdered(const Site& s1, const Site& s2) {
 	if (s1.p[1] < s2.p[1])
@@ -57,6 +60,24 @@ void square(std::vector<Site>& sites, Voronoi* diagram){
 	s.p[1] = 3;				sites.push_back(s);
 }
 
+void printDiagram(Voronoi* diagram){
+	for(HalfEdge* e : diagram->edges){
+		cout.width(10);
+		if(e->origin)
+			cout << e->origin->p;
+		else
+			cout << "infinity";
+		cout << " -> ";
+		cout.width(10);
+		if(e->twin->origin)
+			cout << e->twin->origin->p;
+		else
+			cout << "infinity"; 
+		cout << " | " << e->site->p << " , " << e->twin->site->p;
+		cout << endl;
+	}
+}
+
 int main(int argc, char** argv) {
 	Voronoi* diagram = new Voronoi();
 
@@ -80,6 +101,8 @@ int main(int argc, char** argv) {
 
 	diagram->compute();
 	diagram->relax();
+
+	printDiagram(diagram);
 
 	return 0;
 }

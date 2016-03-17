@@ -4,6 +4,7 @@
 #include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <sstream>
 
 class Vector2 {
 public:
@@ -63,7 +64,9 @@ inline Vector2 unit(const Vector2 &v) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Vector2& v) {
-    os << "(" << v[0] << ", " << v[1] << ")";
+    std::stringstream ss;
+    ss << "<" << v[0] << ", " << v[1] << ">";
+    os << ss.str();
     return os;
 }
 

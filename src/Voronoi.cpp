@@ -12,7 +12,7 @@ using std::pair;
 
 Point2 diagramCenter;
 
-#define _PRINT_BEACHLINE 1
+//#define _PRINT_BEACHLINE 1
 
 Voronoi::Voronoi(){
 	boundsSet = false;
