@@ -2,6 +2,9 @@
 #define _VECTOR2_h
 
 #include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <sstream>
 
 class Vector2 {
 public:
@@ -32,7 +35,13 @@ public:
     bool operator!=(const Vector2 &v) const;
     void print() const;
 
-private:
+    static inline double signedAngle(Vector2 v1, Vector2 v2){
+        double angle = atan2(v2[1], v2[0]) - atan2(v1[1], v1[0]);
+        if (angle < 0) angle += 2 * M_PI;
+        
+        return angle;
+    };
+
     double x, y;
 };
 

@@ -38,7 +38,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -65,12 +67,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\DCEL.h" />
+    <ClInclude Include="src\Geometry.h" />
     <ClInclude Include="src\Point2.h" />
     <ClInclude Include="src\Vector2.h" />
     <ClInclude Include="src\Voronoi.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BeachLine.cpp" />
+    <ClCompile Include="src\DCEL.cpp" />
+    <ClCompile Include="src\Geometry.cpp" />
     <ClCompile Include="src\Point2.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\Vector2.cpp" />

@@ -3,9 +3,12 @@
 
 #include "Vector2.h"
 #include <iostream>
+#include <sstream>
 
 class Point2{
 public:
+	double x, y;
+
     Point2();
     Point2(const Point2& p);
     Point2(double _x, double _y);
@@ -32,9 +35,6 @@ public:
     bool operator!=( const Point2 &p ) const;
 
     void print() const;
-
-private:
-    double x, y;
 };
 
 inline Point2 lerp( const Point2& p0, const Point2& p1, double dT ){

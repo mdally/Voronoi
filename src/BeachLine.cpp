@@ -1,169 +1,310 @@
-#include "Voronoi.h"
-#include <iostream>
-using std::cout;
-using std::endl;
-#include <string>
+#include "VoronoiDiagramGenerator.h"
+#include "Point2.h"
+#include "BeachLine.h"
+#include "Cell.h"
+#include "Epsilon.h"
+#include <vector>
 
-BeachLine::BeachLine(){
-	root = nullptr;
-}
+treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
+	double x = site->p.x;
+	double directrix = site->p.y;
 
-BeachLine::~BeachLine(){
-	if (root) destroy(root);
-}
+	// find the left and right beach sections which will surround the newly
+	// created beach section.
+	treeNode<BeachSection>* lSection = nullptr;
+	treeNode<BeachSection>* rSection = nullptr;
+	treeNode<BeachSection>* node = beachLine->getRoot();
 
-beachLineNode* BeachLine::arcAbove(Site* s){
-	beachLineNode* arc = root;
-
-	while (arc->s2 != nullptr){
-		Point2* p1 = &(arc->s1->p);
-		Point2* p2 = &(arc->s2->p);
-
-		Point2* lower;
-		bool lowerFirst;
-
-		if ((*p1)[1] < (*p2)[1] || ((*p1)[1] == (*p2)[1] && (*p1)[0] > (*p2)[0])){
-			lower = p1;
-			lowerFirst = true;
+	double dxl, dxr;
+	while (node) {
+		dxl = leftBreakpoint(node, directrix) - x;
+		if (dxl > EPSILON) {
+			//falls somewhere before the left edge of the beachsection
+			node = node->left;
 		}
-		else{
-			lower = p2;
-			lowerFirst = false;
-		}
-
-		//get the 2 intersections for this breakpoint. Pick either left of right based on stuff above
-		//move to either left or right child depending on where new site is in relation to breakpoint
-		Point2 intersect1, intersect2;
-		findParabolaIntersections(*p1, *p2, s->p[1], intersect1, intersect2);
-
-		Point2* left;
-		Point2* right;
-
-		if (intersect1[0] < intersect2[0]){
-			left = &intersect1;
-			right = &intersect2;
-		}
-		else{
-			left = &intersect2;
-			right = &intersect1;
-		}
-
-		Point2* compare;
-		if (lowerFirst){
-			compare = right;
-		}
-		else{
-			compare = left;
-		}
-		
-		if (s->p[0] > (*compare)[0]){
-			arc = arc->right;
-		}
-		else{
-			arc = arc->left;
+		else {
+			dxr = x - rightBreakpoint(node, directrix);
+			if (dxr > EPSILON) {
+				//falls somewhere after the right edge of the beachsection
+				if (!node->right) {
+					lSection = node;
+					break;
+				}
+				node = node->right;
+			}
+			else {
+				if (dxl > -EPSILON) {
+					//falls exactly on the left edge of the beachsection
+					lSection = node->prev;
+					rSection = node;
+				}
+				else if (dxr > -EPSILON) {
+					//exactly on the right edge of the beachsection
+					lSection = node;
+					rSection = node->next;
+				}
+				else {
+					// falls somewhere in the middle of the beachsection
+					lSection = rSection = node;
+				}
+				break;
+			}
 		}
 	}
+	// at this point, keep in mind that lArc and/or rArc could be
+	// undefined or null.
 
-	return arc;
-}
+	// add a new beach section for the site to the RB-tree
+	BeachSection section(site);
+	treeNode<BeachSection>* newSection = beachLine->insertSuccessor(lSection, section);
 
-beachLineNode* BeachLine::min(beachLineNode* n){
-	if (n == nullptr) return nullptr;
+	// cases:
 
-	while (n->left != nullptr){
-		n = n->left;
+	// [null,null]
+	// least likely case: new beach section is the first beach section on the
+	// beachline.
+	// This case means:
+	//   no new transition appears
+	//   no collapsing beach section
+	//   new beachsection becomes root of the RB-tree
+	if (!lSection && !rSection) {
+		return newSection;
 	}
 
-	return n;
-}
+	// [lArc,rArc] where lArc == rArc
+	// most likely case: new beach section split an existing beach
+	// section.
+	// This case means:
+	//   one new transition appears
+	//   the left and right beach section might be collapsing as a result
+	//   two new nodes added to the RB-tree
+	if (lSection == rSection) {
+		// invalidate circle event of split beach section
+		circleEventQueue->removeCircleEvent(lSection);
 
-beachLineNode* BeachLine::max(beachLineNode* n){
-	if (n == nullptr) return nullptr;
+		// split the beach section into two separate beach sections
+		BeachSection copy = BeachSection(lSection->data.site);
+		rSection = beachLine->insertSuccessor(newSection, copy);
 
-	while (n->right != nullptr){
-		n = n->right;
+		// since we have a new transition between two beach sections,
+		// a new edge is born
+		Edge* newEdge = diagram->createEdge(lSection->data.site, newSection->data.site, nullptr, nullptr);
+		newSection->data.edge = rSection->data.edge = newEdge;
+
+		// check whether the left and right beach sections are collapsing
+		// and if so create circle events, to be notified when the point of
+		// collapse is reached.
+		circleEventQueue->addCircleEvent(lSection);
+		circleEventQueue->addCircleEvent(rSection);
+
+		return newSection;
 	}
 
-	return n;
-}
-
-beachLineNode* BeachLine::predecessor(beachLineNode* n){
-	if (n == nullptr) return nullptr;
-
-	if (n->left != nullptr){
-		return max(n->left);
+	// [lArc,null]
+	// even less likely case: new beach section is the *last* beach section
+	// on the beachline -- this can happen *only* if *all* the previous beach
+	// sections currently on the beachline share the same y value as
+	// the new beach section.
+	// This case means:
+	//   one new transition appears
+	//   no collapsing beach section as a result
+	//   new beach section become right-most node of the RB-tree
+	if (lSection && !rSection) {
+		newSection->data.edge = diagram->createEdge(lSection->data.site, newSection->data.site, nullptr, nullptr);
+		return newSection;
 	}
-	beachLineNode* predecessor = n->parent;
-	while (predecessor != nullptr && n == predecessor->left){
-		n = predecessor;
-		predecessor = predecessor->parent;
+
+	// [lArc,rArc] where lArc != rArc
+	// somewhat less likely case: new beach section falls *exactly* in between two
+	// existing beach sections
+	// This case means:
+	//   one transition disappears
+	//   two new transitions appear
+	//   the left and right beach section might be collapsing as a result
+	//   only one new node added to the RB-tree
+	if (lSection != rSection) {
+		// invalidate circle events of left and right sites
+		circleEventQueue->removeCircleEvent(lSection);
+		circleEventQueue->removeCircleEvent(rSection);
+
+		// an existing transition disappears, meaning a vertex is defined at
+		// the disappearance point.
+		// since the disappearance is caused by the new beachsection, the
+		// vertex is at the center of the circumscribed circle of the left,
+		// new and right beachsections.
+		// http://mathforum.org/library/drmath/view/55002.html
+		// Except that I bring the origin at A to simplify
+		// calculation
+		Site* lSite = lSection->data.site;
+		Site* rSite = rSection->data.site;
+		Point2& lP = lSite->p;
+		Point2& sP = site->p;
+		Point2& rP = rSite->p;
+		double ax = lP.x;
+		double ay = lP.y;
+		double bx = sP.x - ax;
+		double by = sP.y - ay;
+		double cx = rP.x - ax;
+		double cy = rP.y - ay;
+		double d = 2 * (bx*cy - by*cx);
+		double hb = bx*bx + by*by;
+		double hc = cx*cx + cy*cy;
+		Point2* vertex = diagram->createVertex((cy*hb - by*hc) / d + ax, (bx*hc - cx*hb) / d + ay);
+
+		// one transition disappear
+		rSection->data.edge->setStartPoint(lSite, rSite, vertex);
+
+		// two new transitions appear at the new vertex location
+		newSection->data.edge = diagram->createEdge(lSite, site, nullptr, vertex);
+		rSection->data.edge = diagram->createEdge(site, rSite, nullptr, vertex);
+
+		// check whether the left and right beach sections are collapsing
+		// and if so create circle events, to handle the point of collapse.
+		circleEventQueue->addCircleEvent(lSection);
+		circleEventQueue->addCircleEvent(rSection);
+
+		return newSection;
 	}
-	return predecessor;
+
+	return nullptr;
 }
 
-beachLineNode* BeachLine::successor(beachLineNode* n){
-	if (n == nullptr) return nullptr;
+void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section) {
+	CircleEvent circle = section->data.circleEvent->data;
+	double x = circle.x;
+	double y = circle.yCenter;
+	Point2* vertex = diagram->createVertex(x, y);
+	treeNode<BeachSection>* prev = section->prev;
+	treeNode<BeachSection>* next = section->next;
+	std::vector<treeNode<BeachSection>*> disappearingTransitions;
+	std::vector<treeNode<BeachSection>*> toBeDetached;
+	disappearingTransitions.push_back(section);
 
-	if (n->right != nullptr){
-		return min(n->right);
+	// remove collapsed beachsection from beachline
+	//detachBeachSection(section);
+	toBeDetached.push_back(section);
+
+	// there could be more than one empty arc at the deletion point, this
+	// happens when more than two edges are linked by the same vertex,
+	// so we will collect all those edges by looking up both sides of
+	// the deletion point.
+	// by the way, there is *always* a predecessor/successor to any collapsed
+	// beach section, it's just impossible to have a collapsing first/last
+	// beach sections on the beachline, since they obviously are unconstrained
+	// on their left/right side.
+
+	// look left
+	treeNode<BeachSection>* lSection = prev;
+	while (lSection->data.circleEvent 
+			&& eq_withEpsilon(x, lSection->data.circleEvent->data.x) 
+			&& eq_withEpsilon(y, lSection->data.circleEvent->data.yCenter)) {
+		prev = lSection->prev;
+		disappearingTransitions.insert(disappearingTransitions.begin(), lSection);
+		//detachBeachSection(lSection);
+		toBeDetached.push_back(lSection);
+		lSection = prev;
 	}
-	beachLineNode* successor = n->parent;
-	while (successor != nullptr && n == successor->right){
-		n = successor;
-		successor = successor->parent;
+	// even though it is not disappearing, I will also add the beach section
+	// immediately to the left of the left-most collapsed beach section, for
+	// convenience, since we need to refer to it later as this beach section
+	// is the 'left' site of an edge for which a start point is set.
+	disappearingTransitions.insert(disappearingTransitions.begin(), lSection);
+	circleEventQueue->removeCircleEvent(lSection);
+
+	// look right
+	treeNode<BeachSection>* rSection = next;
+	while (rSection->data.circleEvent 
+			&& eq_withEpsilon(x, rSection->data.circleEvent->data.x) 
+			&& eq_withEpsilon(y, rSection->data.circleEvent->data.yCenter)) {
+		next = rSection->next;
+		disappearingTransitions.push_back(rSection);
+		//detachBeachSection(rSection);
+		toBeDetached.push_back(rSection);
+		rSection = next;
 	}
-	return successor;
-}
+	// we also have to add the beach section immediately to the right of the
+	// right-most collapsed beach section, since there is also a disappearing
+	// transition representing an edge's start point on its left.
+	disappearingTransitions.push_back(rSection);
+	circleEventQueue->removeCircleEvent(rSection);
 
-beachLineNode* BeachLine::prevArc(beachLineNode* n){
-	return predecessor(predecessor(n));
-}
-
-beachLineNode* BeachLine::nextArc(beachLineNode* n){
-	return successor(successor(n));
-}
-
-nodeTriplet BeachLine::leftTriplet(beachLineNode* n){
-	nodeTriplet triplet = { 0 };
-	triplet.n1 = n;
-	triplet.n2 = nextArc(n);
-	triplet.n3 = nextArc(triplet.n2);
-
-	return triplet;
-}
-
-nodeTriplet BeachLine::rightTriplet(beachLineNode* n){
-	nodeTriplet triplet = { 0 };
-	triplet.n3 = n;
-	triplet.n2 = prevArc(n);
-	triplet.n1 = prevArc(triplet.n2);
-
-	return triplet;
-}
-
-void BeachLine::destroy(beachLineNode* n){
-	if (n == nullptr) return;
-	if (n->left) destroy(n->left);
-	if (n->right) destroy(n->right);
-	delete n;
-}
-
-void BeachLine::printLine(){
-	beachLineNode* n = min(root);
-
-	while(n){
-		printNode(n);
-		cout << endl;
-		n = successor(n);
+	// walk through all the disappearing transitions between beach sections and
+	// set the start point of their (implied) edge.
+	size_t nSections = disappearingTransitions.size();
+	for (size_t iSection = 1; iSection < nSections; ++iSection) {
+		rSection = disappearingTransitions[iSection];
+		lSection = disappearingTransitions[iSection - 1];
+		rSection->data.edge->setStartPoint(lSection->data.site, rSection->data.site, vertex);
 	}
-	cout << endl << endl;
+
+	// create a new edge as we have now a new transition between
+	// two beach sections which were previously not adjacent.
+	// since this edge appears as a new vertex is defined, the vertex
+	// actually define an end point of the edge (relative to the site
+	// on the left)
+	lSection = disappearingTransitions[0];
+	rSection = disappearingTransitions[nSections - 1];
+	rSection->data.edge = diagram->createEdge(lSection->data.site, rSection->data.site, nullptr, vertex);
+
+	for (treeNode<BeachSection>* section : toBeDetached) {
+		detachBeachSection(section);
+	}
+
+	// create circle events if any for beach sections left in the beachline
+	// adjacent to collapsed sections
+	circleEventQueue->addCircleEvent(lSection);
+	circleEventQueue->addCircleEvent(rSection);
 }
 
-void BeachLine::printNode(beachLineNode* n){
-	cout << "<";
-	cout << "(" << n->s1->p[0] << "," << n->s1->p[1] << ")";
-	if (n->s2){
-		cout << " - (" << n->s2->p[0] << "," << n->s2->p[1] << ")";
+// calculate the left break point of a particular beach section,
+// given a particular sweep line
+double VoronoiDiagramGenerator::leftBreakpoint(treeNode<BeachSection>* section, double directrix) {
+	Point2 site = section->data.site->p;
+	double rfocx = site.x;
+	double rfocy = site.y;
+	double pby2 = rfocy - directrix;
+	// parabola in degenerate case where focus is on directrix
+	if (pby2 == 0) {
+		return rfocx;
 	}
-	cout << ">";
+
+	treeNode<BeachSection>* lSection = section->prev;
+	if (!lSection) {
+		return -std::numeric_limits<double>::infinity();
+	}
+
+	site = lSection->data.site->p;
+	double lfocx = site.x;
+	double lfocy = site.y;
+	double plby2 = lfocy - directrix;
+	// parabola in degenerate case where focus is on directrix
+	if (plby2 == 0) {
+		return lfocx;
+	}
+
+	double hl = lfocx - rfocx;
+	double aby2 = (1 / pby2) - (1 / plby2);
+	double b = hl / plby2;
+	if (aby2 != 0) {
+		return (-b + sqrt(b*b - 2 * aby2*(hl*hl / (-2 * plby2) - lfocy + plby2 / 2 + rfocy - pby2 / 2))) / aby2 + rfocx;
+	}
+	// both parabolas have same distance to directrix, thus break point is midway
+	return (rfocx + lfocx) / 2;
+}
+
+// calculate the right break point of a particular beach section,
+// given a particular directrix
+double VoronoiDiagramGenerator::rightBreakpoint(treeNode<BeachSection>* section, double directrix) {
+	treeNode<BeachSection>* rSection = section->next;
+	if (rSection) {
+		return leftBreakpoint(rSection, directrix);
+	}
+	Point2 site = section->data.site->p;
+
+	if (site.y == directrix) {
+		return site.x;
+	}
+	else {
+		return std::numeric_limits<double>::infinity();
+	}
 }

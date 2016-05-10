@@ -1,6 +1,5 @@
 #include "Vector2.h"
 
-#include <math.h>
 #include <assert.h>
 
 Vector2::Vector2() : x(0), y(0) {}
@@ -96,3 +95,4 @@ bool Vector2::operator!=(const Vector2 &v) const {
 void Vector2::print() const {
     std::cout << x << " " << y << "\n";
 }
+
