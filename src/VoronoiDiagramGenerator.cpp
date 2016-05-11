@@ -114,8 +114,8 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 
 		//sanitize sites
 		if (site) {
-			site->x /= EPSILON; site->y /= EPSILON;
-			site->x *= EPSILON; site->y *= EPSILON;
+			site->x = round(site->x / EPSILON)*EPSILON;
+			site->y = round(site->y / EPSILON)*EPSILON;
 		}
 
 		// add beach section
@@ -137,7 +137,7 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 		else
 			break;
 
-		printBeachLine();
+		//printBeachLine();
 	}
 
 	// wrapping-up:

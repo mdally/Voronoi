@@ -60,77 +60,28 @@ void square(std::vector<Point2>& sites, BoundingBox& bbox) {
 }
 
 int main() {
-	unsigned int nPoints = 8;
+	unsigned int nPoints = 9;
 	unsigned int dimension = 10;
 	VoronoiDiagramGenerator* vdg = nullptr;
-	std::clock_t start; 
 	vdg = new VoronoiDiagramGenerator();
 
-	////////////////////////////////////////////////////////////////////
 	std::vector<Point2> sites;
 	std::vector<Point2> safeSites;
 	BoundingBox bbox;
 	randomSites(sites, bbox, dimension, nPoints); 
 	std::sort(sites.begin(), sites.end(), sitesOrdered);
 	safeSites.push_back(sites[0]);
-	int duplicates = -1;
-	for (Point2& s : sites) {
-		if (s != safeSites.back()) {
-			safeSites.push_back(s);
-		}
-		else {
-			++duplicates;
+	for (size_t i = 1; i < nPoints; ++i) {
+		if (safeSites[i] != safeSites.back()) {
+			safeSites.push_back(safeSites[i]);
 		}
 	}
 	Diagram* diagram = vdg->compute(safeSites, bbox);
-	////////////////////////////////////////////////////////////////////
 
 	int relaxations = 0;
 	while (true) {
-		if (diagram->cells.size() < 8) {
-			int i = 0;
-		}
-		if (relaxations == 179) {
-			int i = 0;
-		}
-		/*for (Cell* c : diagram->cells) {
-			std::cout << c->site.p.x << ' ' << c->site.p.y << std::endl;
-		}
-		std::cout << std::endl;*/
 		diagram = vdg->relax();
 		++relaxations;
-		/*std::cin >> nPoints;
-
-		start = std::clock();
-
-		vdg = new VoronoiDiagramGenerator();
-
-		std::vector<Point2> sites;
-		std::vector<Point2> safeSites;
-		BoundingBox bbox;
-
-		//square(sites, bbox);
-		//siteBreakpointIntersect(sites, bbox);
-		randomSites(sites, bbox, dimension, nPoints);
-
-		std::sort(sites.begin(), sites.end(), sitesOrdered);
-		safeSites.push_back(sites[0]);
-		int duplicates = -1;
-		for (Point2& s : sites) {
-			if (s != safeSites.back()) {
-				safeSites.push_back(s);
-			}
-			else {
-				++duplicates;
-			}
-		}
-
-		Diagram* diagram = vdg->compute(safeSites, bbox);
-		vdg->relax();
-		delete diagram;
-		delete vdg;
-
-		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms for " << nPoints << " points" << std::endl;*/
 	}
 	delete diagram;
 	delete vdg;
