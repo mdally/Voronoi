@@ -10,6 +10,30 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\BeachLine.h" />
+    <ClInclude Include="src\Cell.h" />
+    <ClInclude Include="src\CircleEventQueue.h" />
+    <ClInclude Include="src\Diagram.h" />
+    <ClInclude Include="src\Edge.h" />
+    <ClInclude Include="src\Epsilon.h" />
+    <ClInclude Include="src\MemoryPool.h" />
+    <ClInclude Include="src\Point2.h" />
+    <ClInclude Include="src\RBTree.h" />
+    <ClInclude Include="src\Vector2.h" />
+    <ClInclude Include="src\VoronoiDiagramGenerator.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\BeachLine.cpp" />
+    <ClCompile Include="src\Cell.cpp" />
+    <ClCompile Include="src\CircleEventQueue.cpp" />
+    <ClCompile Include="src\Diagram.cpp" />
+    <ClCompile Include="src\Edge.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Point2.cpp" />
+    <ClCompile Include="src\Vector2.cpp" />
+    <ClCompile Include="src\VoronoiDiagramGenerator.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D4D6CF7A-B81E-41A2-8096-5CD60BB77570}</ProjectGuid>
     <RootNamespace>Voronoi</RootNamespace>
@@ -18,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -65,22 +89,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="src\DCEL.h" />
-    <ClInclude Include="src\Geometry.h" />
-    <ClInclude Include="src\Point2.h" />
-    <ClInclude Include="src\Vector2.h" />
-    <ClInclude Include="src\Voronoi.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\BeachLine.cpp" />
-    <ClCompile Include="src\DCEL.cpp" />
-    <ClCompile Include="src\Geometry.cpp" />
-    <ClCompile Include="src\Point2.cpp" />
-    <ClCompile Include="src\test.cpp" />
-    <ClCompile Include="src\Vector2.cpp" />
-    <ClCompile Include="src\Voronoi.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

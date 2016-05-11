@@ -1,5 +1,6 @@
 #include "VoronoiDiagramGenerator.h"
 #include "Vector2.h"
+#include "Epsilon.h"
 #include <algorithm>
 #include <iostream>
 using std::cout;
@@ -110,6 +111,12 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 		// for this we find out if there is a site event and it is
 		// 'earlier' than the circle event
 		circle = circleEventQueue->firstEvent;
+
+		//sanitize sites
+		if (site) {
+			site->x /= EPSILON; site->y /= EPSILON;
+			site->x *= EPSILON; site->y *= EPSILON;
+		}
 
 		// add beach section
 		if (site && (!circle || site->y < circle->data.y || (site->y == circle->data.y && site->x < circle->data.x))) {

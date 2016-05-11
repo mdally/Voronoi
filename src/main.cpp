@@ -60,7 +60,7 @@ void square(std::vector<Point2>& sites, BoundingBox& bbox) {
 }
 
 int main() {
-	unsigned int nPoints = 5;
+	unsigned int nPoints = 8;
 	unsigned int dimension = 10;
 	VoronoiDiagramGenerator* vdg = nullptr;
 	std::clock_t start; 
@@ -87,10 +87,10 @@ int main() {
 
 	int relaxations = 0;
 	while (true) {
-		if (diagram->cells.size() < 5) {
+		if (diagram->cells.size() < 8) {
 			int i = 0;
 		}
-		if (relaxations == 188) {
+		if (relaxations == 179) {
 			int i = 0;
 		}
 		/*for (Cell* c : diagram->cells) {
