@@ -431,7 +431,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 				}
 
 				// walk rightward along bottom side
-				if (!finished && foundEntryPoint || eq_withEpsilon(va->y, bbox.yB) && lt_withEpsilon(va->x, bbox.xR)) {
+				if ((!finished && foundEntryPoint) || (eq_withEpsilon(va->y, bbox.yB) && lt_withEpsilon(va->x, bbox.xR))) {
 					foundEntryPoint = true;
 					lastBorderSegment = eq_withEpsilon(vz->y, bbox.yB);
 					vb = lastBorderSegment ? vz : createVertex(lastBorderSegment ? vz->x : bbox.xR, bbox.yB);
@@ -444,7 +444,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 				}
 
 				// walk upward along right side
-				if (!finished && foundEntryPoint || eq_withEpsilon(va->x, bbox.xR) && gt_withEpsilon(va->y, bbox.yT)) {
+				if ((!finished && foundEntryPoint) || (eq_withEpsilon(va->x, bbox.xR) && gt_withEpsilon(va->y, bbox.yT))) {
 					foundEntryPoint = true;
 					lastBorderSegment = eq_withEpsilon(vz->x, bbox.xR);
 					vb = lastBorderSegment ? vz : createVertex(bbox.xR, lastBorderSegment ? vz->y : bbox.yT);
@@ -457,7 +457,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 				}
 
 				// walk leftward along top side
-				if (!finished && foundEntryPoint || eq_withEpsilon(va->y, bbox.yT) && gt_withEpsilon(va->x, bbox.xL)) {
+				if ((!finished && foundEntryPoint) || (eq_withEpsilon(va->y, bbox.yT) && gt_withEpsilon(va->x, bbox.xL))) {
 					lastBorderSegment = eq_withEpsilon(vz->y, bbox.yT);
 					vb = lastBorderSegment ? vz : createVertex(lastBorderSegment ? vz->x : bbox.xL, bbox.yT);
 					edge = createBorderEdge(&cell->site, va, vb);
