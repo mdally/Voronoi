@@ -1,12 +1,11 @@
 #include "Diagram.h"
 #include "VoronoiDiagramGenerator.h"
 #include "Epsilon.h"
+#include <iostream>
+using std::cout;
+using std::endl;
 
 void Diagram::printShit() {
-#include <iostream>
-	using std::cout;
-	using std::endl;
-
 	if (cells.size()) {
 		for (Cell* c : cells) {
 			cout << c->site.p << endl;
