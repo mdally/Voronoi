@@ -42,6 +42,7 @@
 	int relax = 0;
 	bool startOver = true;
 	bool relaxHold = false;
+	bool relaxForever = false;
 	// Is called whenever a key is pressed/released via GLFW
 	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -57,6 +58,10 @@
 				relaxHold = true;
 			else if (action == GLFW_RELEASE)
 				relaxHold = false;
+		}
+		if (key == GLFW_KEY_J && action == GLFW_PRESS) {
+			if (relaxForever) relaxForever = false;
+			else relaxForever = true;
 		}
 	}
 #endif
@@ -113,8 +118,8 @@ void square(std::vector<Point2>& sites, BoundingBox& bbox) {
 }
 
 int main() {
-	unsigned int nPoints = 9;
-	unsigned int dimension = 10;
+	unsigned int nPoints = 8;
+	unsigned int dimension = 20000;
 	int relaxationCount = 0;
 	VoronoiDiagramGenerator vdg = VoronoiDiagramGenerator();
 	Diagram* diagram = nullptr;
@@ -149,6 +154,9 @@ int main() {
 		if (startOver) {
 			relaxationCount = 0;
 			startOver = false;
+			relaxHold = false;
+			relaxForever = false;
+			relax = 0;
 			sites = new std::vector<Point2>();
 			safeSites = new std::vector<Point2>();
 			std::cin >> nPoints;
@@ -190,7 +198,7 @@ int main() {
 			}
 		}
 
-		if (relax || relaxHold) {
+		if (relax || relaxHold || relaxForever) {
 			diagram = vdg.relax();
 			if (diagram->cells.size() != 4) {
 				int x = 0;
@@ -225,6 +233,8 @@ int main() {
 	diagram = vdg.compute(*safeSites, bbox);
 
 	while (true) {
+		if (relaxationCount == 120)
+			int i = 0;
 		diagram = vdg.relax();
 		++relaxationCount;
 	}

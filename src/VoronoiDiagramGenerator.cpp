@@ -32,8 +32,13 @@ Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBo
 	siteEventQueue = new std::vector<Point2*>();
 	boundingBox = bbox;
 
-	for (size_t i = 0; i < sites.size(); ++i)
+	for (size_t i = 0; i < sites.size(); ++i) {
+		//sanitize sites by quantizing to integer multiple of epsilon
+		sites[i].x = round(sites[i].x / EPSILON)*EPSILON;
+		sites[i].y = round(sites[i].y / EPSILON)*EPSILON;
+
 		siteEventQueue->push_back(&(sites[i]));
+	}
 
 	return compute2();
 }
@@ -42,8 +47,13 @@ Diagram* VoronoiDiagramGenerator::compute(Point2* sites, size_t siteCount, Bound
 	siteEventQueue = new std::vector<Point2*>();
 	boundingBox = bbox;
 	
-	for (size_t i = 0; i < siteCount; ++i)
+	for (size_t i = 0; i < siteCount; ++i) {
+		//sanitize sites by quantizing to integer multiple of epsilon
+		sites[i].x = round(sites[i].x / EPSILON)*EPSILON;
+		sites[i].y = round(sites[i].y / EPSILON)*EPSILON;
+
 		siteEventQueue->push_back(&(sites[i]));
+	}
 
 	return compute2();
 }
@@ -111,12 +121,6 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 		// for this we find out if there is a site event and it is
 		// 'earlier' than the circle event
 		circle = circleEventQueue->firstEvent;
-
-		//sanitize sites
-		if (site) {
-			site->x = round(site->x / EPSILON)*EPSILON;
-			site->y = round(site->y / EPSILON)*EPSILON;
-		}
 
 		// add beach section
 		if (site && (!circle || site->y < circle->data.y || (site->y == circle->data.y && site->x < circle->data.x))) {
