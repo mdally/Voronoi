@@ -9,7 +9,7 @@
 #include "Epsilon.h"
 
 /*************************************************************************************************************/
-#define DRAW_TO_WINDOW 1
+#define DRAW_TO_WINDOW 0
 #if DRAW_TO_WINDOW
 	// GLEW
 	#define GLEW_STATIC
@@ -81,46 +81,17 @@ void randomSites(std::vector<Point2>& sites, BoundingBox& bbox, unsigned int dim
 
 	Point2 s;
 
-	srand(0);
-	//srand(std::clock());
+	srand(std::clock());
 	for (unsigned int i = 0; i < numSites; ++i) {
 		s.x = 1 + (rand() / (double)RAND_MAX)*(dimension - 2);
 		s.y = 1 + (rand() / (double)RAND_MAX)*(dimension - 2);
 		sites.push_back(s);
 	}
 }
-void siteBreakpointIntersect(std::vector<Point2>& sites, BoundingBox& bbox) {
-	bbox = BoundingBox(0, 6, 6, 0);
-
-	Point2 s;
-
-	s.y = 1; s.x = 1; sites.push_back(s);
-	s.y = 3;		  sites.push_back(s);
-	s.y = 5;		  sites.push_back(s);
-
-	s.y = 1; s.x = 3; sites.push_back(s);
-	s.y = 5;		  sites.push_back(s);
-
-	s.y = 1; s.x = 5; sites.push_back(s);
-	s.y = 3;		  sites.push_back(s);
-	s.y = 5;		  sites.push_back(s);
-}
-void square(std::vector<Point2>& sites, BoundingBox& bbox) {
-	bbox = BoundingBox(0, 4, 4, 0);
-
-	Point2 s;
-
-	s.y = 1; s.x = 1; sites.push_back(s);
-	s.y = 3;		  sites.push_back(s);
-
-	s.y = 1; s.x = 3; sites.push_back(s);
-	s.y = 3;		  sites.push_back(s);
-}
 
 int main() {
-	unsigned int nPoints = 8;
+	unsigned int nPoints;
 	unsigned int dimension = 20000;
-	int relaxationCount = 0;
 	VoronoiDiagramGenerator vdg = VoronoiDiagramGenerator();
 	Diagram* diagram = nullptr;
 	
@@ -128,7 +99,23 @@ int main() {
 	std::vector<Point2>* safeSites;
 	BoundingBox bbox;
 
-#if DRAW_TO_WINDOW
+#if !DRAW_TO_WINDOW
+	nPoints = 8;
+	sites = new std::vector<Point2>();
+	safeSites = new std::vector<Point2>();
+	randomSites(*sites, bbox, dimension, nPoints);
+	std::sort(sites->begin(), sites->end(), sitesOrdered);
+	safeSites->push_back((*sites)[0]);
+	for (Point2& s : *sites) {
+		if (s != safeSites->back()) 
+			safeSites->push_back(s);
+	}
+	diagram = vdg.compute(*safeSites, bbox);
+
+	while (true) {
+		diagram = vdg.relax();
+	}
+#else
 	// Init GLFW
 	glfwInit();
 	// Set all the required options for GLFW
@@ -152,7 +139,6 @@ int main() {
 		glfwPollEvents();
 
 		if (startOver) {
-			relaxationCount = 0;
 			startOver = false;
 			relaxHold = false;
 			relaxForever = false;
@@ -205,7 +191,6 @@ int main() {
 			}
 			--relax;
 			if (relax < 0) relax = 0;
-			++relaxationCount;
 		}
 
 		// Swap the screen buffers
@@ -214,31 +199,6 @@ int main() {
 
 	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
-
-#else
-	sites = new std::vector<Point2>();
-	safeSites = new std::vector<Point2>();
-	randomSites(*sites, bbox, dimension, nPoints);
-	std::sort(sites->begin(), sites->end(), sitesOrdered);
-	safeSites->push_back((*sites)[0]);
-	int duplicates = -1;
-	for (Point2& s : *sites) {
-		if (s != safeSites->back()) {
-			safeSites->push_back(s);
-		}
-		else {
-			++duplicates;
-		}
-	}
-	diagram = vdg.compute(*safeSites, bbox);
-
-	while (true) {
-		if (relaxationCount == 120)
-			int i = 0;
-		diagram = vdg.relax();
-		++relaxationCount;
-	}
-
 #endif
 
 	delete diagram;
