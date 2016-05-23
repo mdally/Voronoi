@@ -5,56 +5,8 @@
 using std::cout;
 using std::endl;
 
-void Diagram::printShit() {
-	if (cells.size()) {
-		for (Cell* c : cells) {
-			cout << c->site.p << endl;
-			for (HalfEdge* e : c->halfEdges) {
-				cout << '\t' << *e->startPoint() << endl;
-			}
-			cout << endl;
-		}
-		for (Edge* e : edges) {
-			cout << *e->vertA << " -> " << *e->vertB << endl;
-		}
-		cout << endl;
-	}
-	else {
-		for (Cell* c : tmpCells) {
-			cout << c->site.p << endl;
-			for (HalfEdge* e : c->halfEdges) {
-				Point2* pS = e->startPoint();
-				Point2* pE = e->endPoint();
-
-				cout << '\t';
-				if (pS) cout << *pS;
-				else cout << "null";
-				cout << " -> ";
-				if (pE) cout << *pE;
-				else cout << "null";
-				cout << endl;
-			}
-			cout << endl;
-		}
-		for (Edge* e : tmpEdges) {
-			if (e->vertA)
-				cout << *e->vertA;
-			else
-				cout << "null";
-			cout << " -> ";
-			if (e->vertB)
-				cout << *e->vertB;
-			else
-				cout << "null";
-			cout << endl;
-		}
-		cout << endl;
-	}
-	cout << "=============================================" << endl;
-}
-
-Point2* Diagram::createVertex(double _x, double _y) {
-	Point2* vert = vertexPool.newElement(_x, _y);
+Point2* Diagram::createVertex(double x, double y) {
+	Point2* vert = vertexPool.newElement(x, y);
 	tmpVertices.insert(vert);
 
 	return vert;
@@ -69,15 +21,10 @@ Cell* Diagram::createCell(Point2 site) {
 
 Edge* Diagram::createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB) {
 	Edge* edge = edgePool.newElement(lSite, rSite);
-
 	tmpEdges.insert(edge);
 
-	if (vertA) {
-		edge->setStartPoint(lSite, rSite, vertA);
-	}
-	if (vertB) {
-		edge->setEndPoint(lSite, rSite, vertB);
-	}
+	if (vertA) edge->setStartPoint(lSite, rSite, vertA);
+	if (vertB) edge->setEndPoint(lSite, rSite, vertB);
 
 	lSite->cell->halfEdges.push_back(createHalfEdge(edge, lSite, rSite));
 	rSite->cell->halfEdges.push_back(createHalfEdge(edge, rSite, lSite));
@@ -107,7 +54,7 @@ bool Diagram::connectEdge(Edge* edge, BoundingBox bbox) {
 	Point2* vb = edge->vertB;
 	if (vb) { return true; }
 
-	// make local copy for performance purpose
+	// make local copy for speed
 	Site* lSite = edge->lSite;
 	Site* rSite = edge->rSite;
 	double lx = lSite->p.x;
@@ -141,15 +88,8 @@ bool Diagram::connectEdge(Edge* edge, BoundingBox bbox) {
 
 	// depending on the direction, find the best side of the
 	// bounding box to use to determine a reasonable start point
-
-	// rhill 2013-12-02:
 	// While at it, since we have the values which define the line,
 	// clip the end of va if it is outside the bbox.
-	// https://github.com/gorhill/Javascript-Voronoi/issues/15
-	// TODO: Do all the clipping here rather than rely on Liang-Barsky
-	// which does not do well sometimes due to loss of arithmetic
-	// precision. The code here doesn't degrade if one of the vertex is
-	// at a huge distance.
 
 	// special case: vertical line
 	if (ry == ly) {
@@ -233,7 +173,6 @@ bool Diagram::connectEdge(Edge* edge, BoundingBox bbox) {
 // line-clipping code taken from:
 //   Liang-Barsky function by Daniel White
 //   http://www.skytopia.com/project/articles/compsci/clipping.html
-// Thanks!
 // A bit modified to minimize code paths
 bool Diagram::clipEdge(Edge* edge, BoundingBox bbox) {
 	double ax = edge->vertA->x;
@@ -296,7 +235,7 @@ bool Diagram::clipEdge(Edge* edge, BoundingBox bbox) {
 	// if we reach this point, Voronoi edge is within bbox
 
 	// if t0 > 0, va needs to change
-	// rhill 2011-06-03: we need to create a new vertex rather
+	// we need to create a new vertex rather
 	// than modifying the existing one, since the existing
 	// one is likely shared with at least another edge
 	if (t0 > 0) {
@@ -304,7 +243,7 @@ bool Diagram::clipEdge(Edge* edge, BoundingBox bbox) {
 	}
 
 	// if t1 < 1, vb needs to change
-	// rhill 2011-06-03: we need to create a new vertex rather
+	// we need to create a new vertex rather
 	// than modifying the existing one, since the existing
 	// one is likely shared with at least another edge
 	if (t1 < 1) {
@@ -396,10 +335,6 @@ void Diagram::closeCells(BoundingBox bbox) {
 		// find first 'unclosed' point.
 		// an 'unclosed' point will be the end point of a halfedge which
 		// does not match the start point of the following halfedge
-		// special case: only one site, in which case, the viewport is the cell
-		// ...
-
-		// all other cases
 		size_t iLeft = 0;
 		while (iLeft < nHalfEdges) {
 			va = (*halfEdges)[iLeft]->endPoint();
@@ -407,10 +342,6 @@ void Diagram::closeCells(BoundingBox bbox) {
 			// if end point is not equal to start point, we need to add the missing
 			// halfedge(s) up to vz
 			if (abs(va->x - vz->x) >= EPSILON || abs(va->y - vz->y) >= EPSILON) {
-				// rhill 2013-12-02:
-				// "Holes" in the halfedges are not necessarily always adjacent.
-				// https://github.com/gorhill/Javascript-Voronoi/issues/16
-
 				// find entry point:
 				bool foundEntryPoint = false;
 				bool finished = false;
@@ -525,4 +456,52 @@ void Diagram::finalize() {
 	}
 	vertices.shrink_to_fit();
 	tmpVertices.clear();
+}
+
+void Diagram::printDiagram() {
+	if (cells.size()) {
+		for (Cell* c : cells) {
+			cout << c->site.p << endl;
+			for (HalfEdge* e : c->halfEdges) {
+				cout << '\t' << *e->startPoint() << endl;
+			}
+			cout << endl;
+		}
+		for (Edge* e : edges) {
+			cout << *e->vertA << " -> " << *e->vertB << endl;
+		}
+		cout << endl;
+	}
+	else {
+		for (Cell* c : tmpCells) {
+			cout << c->site.p << endl;
+			for (HalfEdge* e : c->halfEdges) {
+				Point2* pS = e->startPoint();
+				Point2* pE = e->endPoint();
+
+				cout << '\t';
+				if (pS) cout << *pS;
+				else cout << "null";
+				cout << " -> ";
+				if (pE) cout << *pE;
+				else cout << "null";
+				cout << endl;
+			}
+			cout << endl;
+		}
+		for (Edge* e : tmpEdges) {
+			if (e->vertA)
+				cout << *e->vertA;
+			else
+				cout << "null";
+			cout << " -> ";
+			if (e->vertB)
+				cout << *e->vertB;
+			else
+				cout << "null";
+			cout << endl;
+		}
+		cout << endl;
+	}
+	cout << "=============================================" << endl;
 }

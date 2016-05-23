@@ -1,5 +1,5 @@
-#ifndef _CIRCLEEVENT_H_
-#define _CIRCLEEVENT_H_
+#ifndef _CIRCLE_EVENT_QUEUE_H_
+#define _CIRCLE_EVENT_QUEUE_H_
 
 #include "RBTree.h"
 #include "BeachLine.h"

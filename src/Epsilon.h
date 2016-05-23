@@ -4,7 +4,7 @@
 #include <cmath>
 
 #define EPSILON 1e-9
-#define INV_EPSILON 1.0 / EPSILON;
+#define INV_EPSILON (1.0 / EPSILON);
 
 inline bool eq_withEpsilon(double a, double b) { return abs(a - b) < EPSILON; }
 inline bool gt_withEpsilon(double a, double b) { return a - b > EPSILON; }

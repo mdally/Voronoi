@@ -18,11 +18,7 @@ void CircleEventQueue::addCircleEvent(treeNode<BeachSection>* section) {
 
 	// Find the circumscribed circle for the three sites associated
 	// with the beachsection triplet.
-	// rhill 2011-05-26: It is more efficient to calculate in-place
-	// rather than getting the resulting circumscribed circle from an
-	// object returned by calling Voronoi.circumcircle()
 	// http://mathforum.org/library/drmath/view/55002.html
-	// Except that I bring the origin at cSite to simplify calculations.
 	// The bottom-most part of the circumcircle is our Fortune 'circle
 	// event', and its center is a vertex potentially part of the final
 	// Voronoi diagram.
@@ -37,10 +33,8 @@ void CircleEventQueue::addCircleEvent(treeNode<BeachSection>* section) {
 	// collapse, hence it can't end up as a vertex (we reuse 'd' here, which
 	// sign is reverse of the orientation, hence we reverse the test.
 	// http://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
-	// rhill 2011-05-21: Nasty finite precision error which caused circumcircle() to
-	// return infinites: 1e-12 seems to fix the problem.
 	double d = 2 * (ax*cy - ay*cx);
-	if (d >= -2e-12) { return; }
+	if (d >= -2e-12) { return; } //handles finite precision error
 
 	double ha = ax*ax + ay*ay;
 	double hc = cx*cx + cy*cy;
@@ -48,12 +42,10 @@ void CircleEventQueue::addCircleEvent(treeNode<BeachSection>* section) {
 	double y = (ax*hc - cx*ha) / d;
 	double ycenter = y + by;
 
-	// Important: ybottom should always be under or at sweep, so no need
-	// to waste CPU cycles by checking
 	CircleEvent circleEvent(section->data.site, x + bx, ycenter + sqrt(x*x + y*y), ycenter, section);
 
-	// find insertion point in RB-tree: circle events are ordered from
-	// smallest to largest
+	// find insertion point in RB-tree: 
+	// circle events are ordered from smallest to largest
 	treeNode<CircleEvent>* predecessor = nullptr;
 	treeNode<CircleEvent>* node = eventQueue.getRoot();
 	while (node) {
@@ -85,7 +77,6 @@ void CircleEventQueue::addCircleEvent(treeNode<BeachSection>* section) {
 }
 
 void CircleEventQueue::removeCircleEvent(treeNode<BeachSection>* section) {
-	//if (!section) return;
 	treeNode<CircleEvent>* circleEvent = section->data.circleEvent;
 	if (circleEvent) {
 		if (!circleEvent->prev) {

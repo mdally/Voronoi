@@ -1,5 +1,5 @@
-#ifndef _POINT2_h
-#define _POINT2_h
+#ifndef _POINT2_H_
+#define _POINT2_H_
 
 #include "Vector2.h"
 #include <iostream>
@@ -47,4 +47,4 @@ inline std::ostream& operator<<(std::ostream& os, const Point2& p){
     return os;
 }
 
-#endif /* _POINT2_h */
+#endif

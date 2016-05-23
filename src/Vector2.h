@@ -1,5 +1,5 @@
-#ifndef _VECTOR2_h
-#define _VECTOR2_h
+#ifndef _VECTOR2_H_
+#define _VECTOR2_H_
 
 #include <iostream>
 #define _USE_MATH_DEFINES
@@ -67,4 +67,4 @@ inline std::ostream& operator<<(std::ostream& os, const Vector2& v) {
     return os;
 }
 
-#endif /* _VECTOR2_h */
+#endif

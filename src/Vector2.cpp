@@ -1,7 +1,5 @@
 #include "Vector2.h"
 
-#include <assert.h>
-
 Vector2::Vector2() : x(0), y(0) {}
 
 Vector2::Vector2(const Vector2& v) : x(v[0]), y(v[1]) {}
@@ -57,7 +55,6 @@ Vector2 Vector2::operator-(const Vector2 &v) const {
 }
 
 Vector2 Vector2::operator/(const double s) const {
-    assert( s > 0.0 );
     return Vector2( x / s, y / s);
 }
 

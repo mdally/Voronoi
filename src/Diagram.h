@@ -13,7 +13,7 @@ public:
 	std::vector<Edge*> edges;
 	std::vector<Point2*> vertices;
 
-	void printShit();
+	void printDiagram();
 private:
 	friend class VoronoiDiagramGenerator;
 

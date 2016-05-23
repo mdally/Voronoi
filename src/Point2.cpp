@@ -1,7 +1,6 @@
 #include "Point2.h"
 
 #include <math.h>
-#include <assert.h>
 
 Point2::Point2() : x(0), y(0) {}
 

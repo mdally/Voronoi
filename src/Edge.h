@@ -23,12 +23,6 @@ struct HalfEdge {
 	Site* site;
 	Edge* edge;
 	double angle;
-	/*
-	Point2* src;
-	HalfEdge* twin;
-	HalfEdge* next;
-	Point2* site;
-	*/
 
 	HalfEdge() : site(nullptr), edge(nullptr) {};
 	HalfEdge(Edge* e, Site* lSite, Site* rSite);

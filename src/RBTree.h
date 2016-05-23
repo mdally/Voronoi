@@ -65,7 +65,7 @@ treeNode<T>* RBTree<T>::insertSuccessor(treeNode<T>* node, T& successorData) {
 		}
 		parent = node;
 	}
-	// rhill 2011-06-07: if node is null, successor must be inserted
+	// if node is null, successor must be inserted
 	// to the left-most part of the tree
 	else if (root) {
 		node = getFirst(root);
@@ -141,7 +141,6 @@ void RBTree<T>::removeNode(treeNode<T>* node) {
 	if (node->prev) {
 		node->prev->next = node->next;
 	}
-	//node->next = node->prev = NULL; //this probably isn't necessary?
 
 	treeNode<T>* original = node;
 	treeNode<T>* parent = node->parent;

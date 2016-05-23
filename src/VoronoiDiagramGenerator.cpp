@@ -95,7 +95,7 @@ Diagram* VoronoiDiagramGenerator::relax() {
 		sites.push_back(centroid);
 	}
 
-	//then recompute using the centroids
+	//then recompute the diagram using the cells' centroids
 	delete diagram;
 	compute(sites, boundingBox);
 
@@ -140,8 +140,6 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 		// all done, quit
 		else
 			break;
-
-		//printBeachLine();
 	}
 
 	// wrapping-up:

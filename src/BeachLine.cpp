@@ -4,6 +4,7 @@
 #include "Cell.h"
 #include "Epsilon.h"
 #include <vector>
+#include <forward_list>
 
 treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 	double x = site->p.x;
@@ -51,8 +52,7 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 			}
 		}
 	}
-	// at this point, keep in mind that lArc and/or rArc could be
-	// undefined or null.
+	// at this point, lSection and/or rSection could be null.
 
 	// add a new beach section for the site to the RB-tree
 	BeachSection section(site);
@@ -60,25 +60,14 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 
 	// cases:
 
-	// [null,null]
-	// least likely case: new beach section is the first beach section on the
-	// beachline.
-	// This case means:
-	//   no new transition appears
-	//   no collapsing beach section
-	//   new beachsection becomes root of the RB-tree
-	if (!lSection && !rSection) {
-		return newSection;
-	}
-
-	// [lArc,rArc] where lArc == rArc
+	// [lSection,rSection] where lSection == rSection
 	// most likely case: new beach section split an existing beach
 	// section.
 	// This case means:
 	//   one new transition appears
 	//   the left and right beach section might be collapsing as a result
 	//   two new nodes added to the RB-tree
-	if (lSection == rSection) {
+	if (lSection && lSection == rSection) {
 		// invalidate circle event of split beach section
 		circleEventQueue->removeCircleEvent(lSection);
 
@@ -86,43 +75,27 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 		BeachSection copy = BeachSection(lSection->data.site);
 		rSection = beachLine->insertSuccessor(newSection, copy);
 
-		// since we have a new transition between two beach sections,
-		// a new edge is born
+		// since we have a new transition between two beach sections, a new edge is born
 		Edge* newEdge = diagram->createEdge(lSection->data.site, newSection->data.site, nullptr, nullptr);
 		newSection->data.edge = rSection->data.edge = newEdge;
 
-		// check whether the left and right beach sections are collapsing
-		// and if so create circle events, to be notified when the point of
-		// collapse is reached.
+		// check whether the left and right beach sections are collapsing 
+		// and if so create circle events
 		circleEventQueue->addCircleEvent(lSection);
 		circleEventQueue->addCircleEvent(rSection);
 
 		return newSection;
 	}
 
-	// [lArc,null]
-	// even less likely case: new beach section is the *last* beach section
-	// on the beachline -- this can happen *only* if *all* the previous beach
-	// sections currently on the beachline share the same y value as
-	// the new beach section.
-	// This case means:
-	//   one new transition appears
-	//   no collapsing beach section as a result
-	//   new beach section become right-most node of the RB-tree
-	if (lSection && !rSection) {
-		newSection->data.edge = diagram->createEdge(lSection->data.site, newSection->data.site, nullptr, nullptr);
-		return newSection;
-	}
-
-	// [lArc,rArc] where lArc != rArc
-	// somewhat less likely case: new beach section falls *exactly* in between two
+	// [lSection,rSection] where lSection != rSection
+	// fairly unlikely case: new beach section falls *exactly* in between two
 	// existing beach sections
 	// This case means:
 	//   one transition disappears
 	//   two new transitions appear
 	//   the left and right beach section might be collapsing as a result
 	//   only one new node added to the RB-tree
-	if (lSection != rSection) {
+	if (lSection && rSection && lSection != rSection) {
 		// invalidate circle events of left and right sites
 		circleEventQueue->removeCircleEvent(lSection);
 		circleEventQueue->removeCircleEvent(rSection);
@@ -133,8 +106,6 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 		// vertex is at the center of the circumscribed circle of the left,
 		// new and right beachsections.
 		// http://mathforum.org/library/drmath/view/55002.html
-		// Except that I bring the origin at A to simplify
-		// calculation
 		Site* lSite = lSection->data.site;
 		Site* rSite = rSection->data.site;
 		Point2& lP = lSite->p;
@@ -151,7 +122,7 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 		double hc = cx*cx + cy*cy;
 		Point2* vertex = diagram->createVertex((cy*hb - by*hc) / d + ax, (bx*hc - cx*hb) / d + ay);
 
-		// one transition disappear
+		// one transition disappears
 		rSection->data.edge->setStartPoint(lSite, rSite, vertex);
 
 		// two new transitions appear at the new vertex location
@@ -159,10 +130,35 @@ treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 		rSection->data.edge = diagram->createEdge(site, rSite, nullptr, vertex);
 
 		// check whether the left and right beach sections are collapsing
-		// and if so create circle events, to handle the point of collapse.
+		// and if so create circle events
 		circleEventQueue->addCircleEvent(lSection);
 		circleEventQueue->addCircleEvent(rSection);
 
+		return newSection;
+	}
+
+	// [lSection,null]
+	// very unlikely case: new beach section is the *last* beach section
+	// on the beachline -- this can happen only if all the previous beach
+	// sections currently on the beachline share the same y value as
+	// the new beach section.
+	// This case means:
+	//   one new transition appears
+	//   no collapsing beach section as a result
+	//   new beach section becomes right-most node of the RB-tree
+	if (lSection && !rSection) {
+		newSection->data.edge = diagram->createEdge(lSection->data.site, newSection->data.site, nullptr, nullptr);
+		return newSection;
+	}
+
+	// [null,null]
+	// least likely case: new beach section is the first beach section on the
+	// beachline.
+	// This case means:
+	//   no new transition appears
+	//   no collapsing beach section
+	//   new beachsection becomes root of the RB-tree
+	if (!lSection && !rSection) {
 		return newSection;
 	}
 
@@ -177,21 +173,16 @@ void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section
 	treeNode<BeachSection>* prev = section->prev;
 	treeNode<BeachSection>* next = section->next;
 	std::vector<treeNode<BeachSection>*> disappearingTransitions;
-	std::vector<treeNode<BeachSection>*> toBeDetached;
+	std::forward_list<treeNode<BeachSection>*> toBeDetached;
 	disappearingTransitions.push_back(section);
 
-	// remove collapsed beachsection from beachline
-	//detachBeachSection(section);
-	toBeDetached.push_back(section);
+	// save collapsed beachsection to be detached from beachline
+	toBeDetached.push_front(section);
 
 	// there could be more than one empty arc at the deletion point, this
 	// happens when more than two edges are linked by the same vertex,
-	// so we will collect all those edges by looking up both sides of
+	// so we will collect all those edges by looking along both sides of
 	// the deletion point.
-	// by the way, there is *always* a predecessor/successor to any collapsed
-	// beach section, it's just impossible to have a collapsing first/last
-	// beach sections on the beachline, since they obviously are unconstrained
-	// on their left/right side.
 
 	// look left
 	treeNode<BeachSection>* lSection = prev;
@@ -200,8 +191,7 @@ void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section
 			&& eq_withEpsilon(y, lSection->data.circleEvent->data.yCenter)) {
 		prev = lSection->prev;
 		disappearingTransitions.insert(disappearingTransitions.begin(), lSection);
-		//detachBeachSection(lSection);
-		toBeDetached.push_back(lSection);
+		toBeDetached.push_front(lSection);
 		lSection = prev;
 	}
 	// even though it is not disappearing, I will also add the beach section
@@ -218,8 +208,7 @@ void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section
 			&& eq_withEpsilon(y, rSection->data.circleEvent->data.yCenter)) {
 		next = rSection->next;
 		disappearingTransitions.push_back(rSection);
-		//detachBeachSection(rSection);
-		toBeDetached.push_back(rSection);
+		toBeDetached.push_front(rSection);
 		rSection = next;
 	}
 	// we also have to add the beach section immediately to the right of the
@@ -229,18 +218,18 @@ void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section
 	circleEventQueue->removeCircleEvent(rSection);
 
 	// walk through all the disappearing transitions between beach sections and
-	// set the start point of their (implied) edge.
+	// set the start point of their (implied) edges.
 	size_t nSections = disappearingTransitions.size();
-	for (size_t iSection = 1; iSection < nSections; ++iSection) {
-		rSection = disappearingTransitions[iSection];
-		lSection = disappearingTransitions[iSection - 1];
+	for (size_t i = 1; i < nSections; ++i) {
+		rSection = disappearingTransitions[i];
+		lSection = disappearingTransitions[i-1];
 		rSection->data.edge->setStartPoint(lSection->data.site, rSection->data.site, vertex);
 	}
 
 	// create a new edge as we have now a new transition between
 	// two beach sections which were previously not adjacent.
 	// since this edge appears as a new vertex is defined, the vertex
-	// actually define an end point of the edge (relative to the site
+	// actually defines an end point of the edge (relative to the site
 	// on the left)
 	lSection = disappearingTransitions[0];
 	rSection = disappearingTransitions[nSections - 1];
@@ -257,14 +246,14 @@ void VoronoiDiagramGenerator::removeBeachSection(treeNode<BeachSection>* section
 }
 
 // calculate the left break point of a particular beach section,
-// given a particular sweep line
+// given a particular sweep line height
 double VoronoiDiagramGenerator::leftBreakpoint(treeNode<BeachSection>* section, double directrix) {
 	Point2 site = section->data.site->p;
 	double rfocx = site.x;
 	double rfocy = site.y;
 	double pby2 = rfocy - directrix;
-	// parabola in degenerate case where focus is on directrix
 	if (pby2 == 0) {
+		// parabola in degenerate case where focus is on directrix
 		return rfocx;
 	}
 
@@ -277,8 +266,8 @@ double VoronoiDiagramGenerator::leftBreakpoint(treeNode<BeachSection>* section, 
 	double lfocx = site.x;
 	double lfocy = site.y;
 	double plby2 = lfocy - directrix;
-	// parabola in degenerate case where focus is on directrix
 	if (plby2 == 0) {
+		// parabola in degenerate case where focus is on directrix
 		return lfocx;
 	}
 
@@ -288,19 +277,21 @@ double VoronoiDiagramGenerator::leftBreakpoint(treeNode<BeachSection>* section, 
 	if (aby2 != 0) {
 		return (-b + sqrt(b*b - 2 * aby2*(hl*hl / (-2 * plby2) - lfocy + plby2 / 2 + rfocy - pby2 / 2))) / aby2 + rfocx;
 	}
-	// both parabolas have same distance to directrix, thus break point is midway
+
+	// if we get here, the two parabolas have the same 
+	// distance to the directrix, so the break point is midway
 	return (rfocx + lfocx) / 2;
 }
 
 // calculate the right break point of a particular beach section,
-// given a particular directrix
+// given a particular sweep line height
 double VoronoiDiagramGenerator::rightBreakpoint(treeNode<BeachSection>* section, double directrix) {
 	treeNode<BeachSection>* rSection = section->next;
 	if (rSection) {
 		return leftBreakpoint(rSection, directrix);
 	}
-	Point2 site = section->data.site->p;
 
+	Point2 site = section->data.site->p;
 	if (site.y == directrix) {
 		return site.x;
 	}
