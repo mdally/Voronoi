@@ -1,6 +1,6 @@
-#include "Point2.h"
+#include "../include/Point2.h"
 #include "CircleEventQueue.h"
-#include "Cell.h"
+#include "../include/Cell.h"
 
 void CircleEventQueue::addCircleEvent(treeNode<BeachSection>* section) {
 	if (!section) return;

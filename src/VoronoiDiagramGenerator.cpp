@@ -1,5 +1,5 @@
-#include "VoronoiDiagramGenerator.h"
-#include "Vector2.h"
+#include "../include/VoronoiDiagramGenerator.h"
+#include "../include/Vector2.h"
 #include "Epsilon.h"
 #include <algorithm>
 #include <iostream>
@@ -40,69 +40,6 @@ Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBo
 		siteEventQueue->push_back(&(sites[i]));
 	}
 
-	return compute2();
-}
-
-Diagram* VoronoiDiagramGenerator::compute(Point2* sites, size_t siteCount, BoundingBox bbox) {
-	siteEventQueue = new std::vector<Point2*>();
-	boundingBox = bbox;
-	
-	for (size_t i = 0; i < siteCount; ++i) {
-		//sanitize sites by quantizing to integer multiple of epsilon
-		sites[i].x = round(sites[i].x / EPSILON)*EPSILON;
-		sites[i].y = round(sites[i].y / EPSILON)*EPSILON;
-
-		siteEventQueue->push_back(&(sites[i]));
-	}
-
-	return compute2();
-}
-
-bool halfEdgesCW(HalfEdge* e1, HalfEdge* e2) {
-	return e1->angle < e2->angle;
-}
-
-Diagram* VoronoiDiagramGenerator::relax() {
-	std::vector<Point2> sites;
-	std::vector<Point2> verts;
-	std::vector<Vector2> vectors;
-	//replace each site with its cell's centroid:
-	//    subdivide the cell into adjacent triangles
-	//    find those triangles' centroids (by averaging corners) 
-	//    and areas (by computing vector cross product magnitude)
-	//    combine the triangles' centroids through weighted average
-	//	  to get the centroid's average
-	for (Cell* c : diagram->cells) {
-		size_t edgeCount = c->halfEdges.size();
-		verts.resize(edgeCount);
-		vectors.resize(edgeCount);
-
-		for (size_t i = 0; i < edgeCount; ++i) {
-			verts[i] = *c->halfEdges[i]->startPoint();
-			vectors[i] = *c->halfEdges[i]->startPoint() - verts[0];
-		}
-
-		Point2 centroid(0.0, 0.0);
-		double totalArea = 0.0;
-		for (size_t i = 1; i < edgeCount-1; ++i) {
-			double area = (vectors[i+1].x*vectors[i].y - vectors[i+1].y*vectors[i].x)/2;
-			totalArea += area;
-			centroid.x += area*(verts[0].x + verts[i].x + verts[i + 1].x) / 3;
-			centroid.y += area*(verts[0].y + verts[i].y + verts[i + 1].y) / 3;
-		}
-		centroid.x /= totalArea;
-		centroid.y /= totalArea;
-		sites.push_back(centroid);
-	}
-
-	//then recompute the diagram using the cells' centroids
-	delete diagram;
-	compute(sites, boundingBox);
-
-	return diagram;
-}
-
-Diagram* VoronoiDiagramGenerator::compute2() {
 	diagram = new Diagram();
 	circleEventQueue = new CircleEventQueue();
 	beachLine = new RBTree<BeachSection>();
@@ -112,13 +49,13 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 
 	// process queue
 	Point2* site = siteEventQueue->empty() ? nullptr : siteEventQueue->back();
-	if(!siteEventQueue->empty()) siteEventQueue->pop_back();
+	if (!siteEventQueue->empty()) siteEventQueue->pop_back();
 	treeNode<CircleEvent>* circle;
 
 	// main loop
 	for (;;) {
-		// we need to figure whether we handle a site or circle event
-		// for this we find out if there is a site event and it is
+		// we need to figure out whether to handle a site or circle event
+		// for this we find out if there is a site event and if it is
 		// 'earlier' than the circle event
 		circle = circleEventQueue->firstEvent;
 
@@ -149,7 +86,7 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 	//   discard edges which are point-like
 	diagram->clipEdges(boundingBox);
 
-	//   add missing edges in order to close opened cells
+	//   add missing edges in order to close open cells
 	diagram->closeCells(boundingBox);
 
 	diagram->finalize();
@@ -162,6 +99,49 @@ Diagram* VoronoiDiagramGenerator::compute2() {
 
 	delete beachLine;
 	beachLine = nullptr;
+
+	return diagram;
+}
+
+bool halfEdgesCW(HalfEdge* e1, HalfEdge* e2) {
+	return e1->angle < e2->angle;
+}
+
+Diagram* VoronoiDiagramGenerator::relax() {
+	std::vector<Point2> sites;
+	std::vector<Point2> verts;
+	std::vector<Vector2> vectors;
+	//replace each site with its cell's centroid:
+	//    subdivide the cell into adjacent triangles
+	//    find those triangles' centroids (by averaging corners) 
+	//    and areas (by computing vector cross product magnitude)
+	//    combine the triangles' centroids through weighted average
+	//	  to get the whole cell's centroid
+	for (Cell* c : diagram->cells) {
+		size_t edgeCount = c->halfEdges.size();
+		verts.resize(edgeCount);
+		vectors.resize(edgeCount);
+
+		for (size_t i = 0; i < edgeCount; ++i) {
+			verts[i] = *c->halfEdges[i]->startPoint();
+			vectors[i] = *c->halfEdges[i]->startPoint() - verts[0];
+		}
+
+		Point2 centroid(0.0, 0.0);
+		double totalArea = 0.0;
+		for (size_t i = 1; i < edgeCount-1; ++i) {
+			double area = (vectors[i+1].x*vectors[i].y - vectors[i+1].y*vectors[i].x)/2;
+			totalArea += area;
+			centroid.x += area*(verts[0].x + verts[i].x + verts[i + 1].x) / 3;
+			centroid.y += area*(verts[0].y + verts[i].y + verts[i + 1].y) / 3;
+		}
+		centroid.x /= totalArea;
+		centroid.y /= totalArea;
+		sites.push_back(centroid);
+	}
+
+	//then recompute the diagram using the cells' centroids
+	compute(sites, boundingBox);
 
 	return diagram;
 }

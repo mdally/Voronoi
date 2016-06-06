@@ -1,5 +1,5 @@
-#include "Cell.h"
-#include "Edge.h"
+#include "../include/Cell.h"
+#include "../include/Edge.h"
 #include <algorithm>
 #include <limits>
 

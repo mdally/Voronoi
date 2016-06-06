@@ -1,12 +1,13 @@
-#include "Diagram.h"
-#include "VoronoiDiagramGenerator.h"
+#include "../include/Diagram.h"
+#include "../include/VoronoiDiagramGenerator.h"
 #include "Epsilon.h"
 #include <iostream>
+#include <algorithm>
 using std::cout;
 using std::endl;
 
 Point2* Diagram::createVertex(double x, double y) {
-	Point2* vert = vertexPool.newElement(x, y);
+	Point2* vert = vertexPool.newElement(Point2(x, y));
 	tmpVertices.insert(vert);
 
 	return vert;
@@ -20,7 +21,7 @@ Cell* Diagram::createCell(Point2 site) {
 }
 
 Edge* Diagram::createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB) {
-	Edge* edge = edgePool.newElement(lSite, rSite);
+	Edge* edge = edgePool.newElement(Edge(lSite, rSite));
 	tmpEdges.insert(edge);
 
 	if (vertA) edge->setStartPoint(lSite, rSite, vertA);
@@ -33,14 +34,14 @@ Edge* Diagram::createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB
 }
 
 Edge* Diagram::createBorderEdge(Site* lSite, Point2* vertA, Point2* vertB) {
-	Edge* edge = edgePool.newElement(lSite, nullptr, vertA, vertB);
+	Edge* edge = edgePool.newElement(Edge(lSite, nullptr, vertA, vertB));
 	tmpEdges.insert(edge);
 
 	return edge;
 }
 
 HalfEdge* Diagram::createHalfEdge(Edge* edge, Site* lSite, Site* rSite) {
-	return halfEdgePool.newElement(edge, lSite, rSite);
+	return halfEdgePool.newElement(HalfEdge(edge, lSite, rSite));
 }
 
 // connect dangling edges (not if a cursory test tells us

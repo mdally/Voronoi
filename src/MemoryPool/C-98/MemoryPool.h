@@ -23,11 +23,10 @@
 #ifndef MEMORY_POOL_H
 #define MEMORY_POOL_H
 
-#include <climits>
-#include <cstddef>
-#include <cstdint>
-#include <type_traits>
-#include <algorithm>
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stddef.h>
 
 template <typename T, size_t BlockSize = 4096>
 class MemoryPool
@@ -41,38 +40,31 @@ class MemoryPool
     typedef const T&        const_reference;
     typedef size_t          size_type;
     typedef ptrdiff_t       difference_type;
-    typedef std::false_type propagate_on_container_copy_assignment;
-    typedef std::true_type  propagate_on_container_move_assignment;
-    typedef std::true_type  propagate_on_container_swap;
 
     template <typename U> struct rebind {
       typedef MemoryPool<U> other;
     };
 
     /* Member functions */
-    MemoryPool() noexcept;
-    MemoryPool(const MemoryPool& memoryPool) noexcept;
-    MemoryPool(MemoryPool&& memoryPool) noexcept;
-    template <class U> MemoryPool(const MemoryPool<U>& memoryPool) noexcept;
+    MemoryPool() throw();
+    MemoryPool(const MemoryPool& memoryPool) throw();
+    template <class U> MemoryPool(const MemoryPool<U>& memoryPool) throw();
 
-    ~MemoryPool() noexcept;
+    ~MemoryPool() throw();
 
-    MemoryPool& operator=(const MemoryPool& memoryPool) = delete;
-    MemoryPool& operator=(MemoryPool&& memoryPool) noexcept;
-
-    pointer address(reference x) const noexcept;
-    const_pointer address(const_reference x) const noexcept;
+    pointer address(reference x) const throw();
+    const_pointer address(const_reference x) const throw();
 
     // Can only allocate one object at a time. n and hint are ignored
     pointer allocate(size_type n = 1, const_pointer hint = 0);
     void deallocate(pointer p, size_type n = 1);
 
-    size_type max_size() const noexcept;
+    size_type max_size() const throw();
 
-    template <class U, class... Args> void construct(U* p, Args&&... args);
-    template <class U> void destroy(U* p);
+    void construct(pointer p, const_reference val);
+    void destroy(pointer p);
 
-    template <class... Args> pointer newElement(Args&&... args);
+    pointer newElement(const_reference val);
     void deleteElement(pointer p);
 
   private:
@@ -80,8 +72,7 @@ class MemoryPool
       value_type element;
       Slot_* next;
 
-	  Slot_() {};
-	  ~Slot_() {};
+	  ~Slot_() {}
     };
 
     typedef char* data_pointer_;
@@ -93,12 +84,13 @@ class MemoryPool
     slot_pointer_ lastSlot_;
     slot_pointer_ freeSlots_;
 
-    size_type padPointer(data_pointer_ p, size_type align) const noexcept;
+    size_type padPointer(data_pointer_ p, size_type align) const throw();
     void allocateBlock();
-
+   /*
     static_assert(BlockSize >= 2 * sizeof(slot_type_), "BlockSize too small.");
+    */
 };
 
-#include "MemoryPool.cpp"
+#include "MemoryPool.tcc"
 
 #endif // MEMORY_POOL_H

@@ -1,9 +1,9 @@
 #ifndef _VORONOI_DIAGRAM_GENERATOR_H_
 #define _VORONOI_DIAGRAM_GENERATOR_H_
 
-#include "RBTree.h"
-#include "CircleEventQueue.h"
-#include "BeachLine.h"
+#include "../src/RBTree.h"
+#include "../src/CircleEventQueue.h"
+#include "../src/BeachLine.h"
 #include "Diagram.h"
 #include <vector>
 
@@ -24,7 +24,6 @@ public:
 	~VoronoiDiagramGenerator() {};
 
 	Diagram* compute(std::vector<Point2>& sites, BoundingBox bbox);
-	Diagram* compute(Point2* sites, size_t siteCount, BoundingBox bbox);
 	Diagram* relax();
 private:
 	Diagram* diagram;
@@ -32,7 +31,6 @@ private:
 	std::vector<Point2*>* siteEventQueue;
 	BoundingBox	boundingBox;
 
-	Diagram* compute2();
 	void printBeachLine();
 
 	//BeachLine

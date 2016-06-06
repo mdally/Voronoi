@@ -1,10 +1,11 @@
-#include "VoronoiDiagramGenerator.h"
-#include "Point2.h"
+#include "../include/VoronoiDiagramGenerator.h"
+#include "../include/Point2.h"
 #include "BeachLine.h"
-#include "Cell.h"
+#include "../include/Cell.h"
 #include "Epsilon.h"
 #include <vector>
 #include <forward_list>
+#include <limits>
 
 treeNode<BeachSection>* VoronoiDiagramGenerator::addBeachSection(Site* site) {
 	double x = site->p.x;

@@ -1,7 +1,8 @@
 #ifndef _DIAGRAM_H_
 #define _DIAGRAM_H_
 
-#include "MemoryPool.h"
+#include "../src/MemoryPool/C-11/MemoryPool.h"
+//#include "../src/MemoryPool/C-98/MemoryPool.h" //You will need to use this version instead of the one above if your compiler doesn't handle C++11's noexcept operator
 #include "Edge.h"
 #include "Cell.h"
 #include <set>

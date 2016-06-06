@@ -1,5 +1,5 @@
-#include "Edge.h"
-#include "Cell.h"
+#include "../include/Edge.h"
+#include "../include/Cell.h"
 #include <cmath>
 
 HalfEdge::HalfEdge(Edge* e, Site* lSite, Site* rSite) {
