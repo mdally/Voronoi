@@ -27,8 +27,8 @@ Edge* Diagram::createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB
 	if (vertA) edge->setStartPoint(lSite, rSite, vertA);
 	if (vertB) edge->setEndPoint(lSite, rSite, vertB);
 
-	lSite->cell->halfEdges.push_back(createHalfEdge(edge, lSite, rSite));
-	rSite->cell->halfEdges.push_back(createHalfEdge(edge, rSite, lSite));
+	lSite->cell->halfEdges.push_back(halfEdgePool.newElement(edge, lSite, rSite));
+	rSite->cell->halfEdges.push_back(halfEdgePool.newElement(edge, rSite, lSite));
 
 	return edge;
 }
@@ -38,10 +38,6 @@ Edge* Diagram::createBorderEdge(Site* lSite, Point2* vertA, Point2* vertB) {
 	tmpEdges.insert(edge);
 
 	return edge;
-}
-
-HalfEdge* Diagram::createHalfEdge(Edge* edge, Site* lSite, Site* rSite) {
-	return halfEdgePool.newElement(HalfEdge(edge, lSite, rSite));
 }
 
 // connect dangling edges (not if a cursory test tells us
@@ -355,7 +351,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 					vb = lastBorderSegment ? vz : createVertex(bbox.xL, lastBorderSegment ? vz->y : bbox.yB);
 					edge = createBorderEdge(&cell->site, va, vb);
 					++iLeft;
-					halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+					halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 					++nHalfEdges;
 					if (lastBorderSegment) { finished = true; }
 					va = vb;
@@ -368,7 +364,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 					vb = lastBorderSegment ? vz : createVertex(lastBorderSegment ? vz->x : bbox.xR, bbox.yB);
 					edge = createBorderEdge(&cell->site, va, vb);
 					++iLeft;
-					halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+					halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 					++nHalfEdges;
 					if (lastBorderSegment) { finished = true; }
 					va = vb;
@@ -381,7 +377,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 					vb = lastBorderSegment ? vz : createVertex(bbox.xR, lastBorderSegment ? vz->y : bbox.yT);
 					edge = createBorderEdge(&cell->site, va, vb);
 					++iLeft;
-					halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+					halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 					++nHalfEdges;
 					if (lastBorderSegment) { finished = true; }
 					va = vb;
@@ -393,7 +389,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 					vb = lastBorderSegment ? vz : createVertex(lastBorderSegment ? vz->x : bbox.xL, bbox.yT);
 					edge = createBorderEdge(&cell->site, va, vb);
 					++iLeft;
-					halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+					halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 					++nHalfEdges;
 					if (lastBorderSegment) { finished = true; }
 					va = vb;
@@ -404,7 +400,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 						vb = lastBorderSegment ? vz : createVertex(bbox.xL, lastBorderSegment ? vz->y : bbox.yB);
 						edge = createBorderEdge(&cell->site, va, vb);
 						++iLeft;
-						halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+						halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 						++nHalfEdges;
 						if (lastBorderSegment) { finished = true; }
 						va = vb;
@@ -416,7 +412,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 						vb = lastBorderSegment ? vz : createVertex(lastBorderSegment ? vz->x : bbox.xR, bbox.yB);
 						edge = createBorderEdge(&cell->site, va, vb);
 						++iLeft;
-						halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+						halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 						++nHalfEdges;
 						if (lastBorderSegment) { finished = true; }
 						va = vb;
@@ -428,7 +424,7 @@ void Diagram::closeCells(BoundingBox bbox) {
 						vb = lastBorderSegment ? vz : createVertex(bbox.xR, lastBorderSegment ? vz->y : bbox.yT);
 						edge = createBorderEdge(&cell->site, va, vb);
 						++iLeft;
-						halfEdges->insert(halfEdges->begin() + iLeft, createHalfEdge(edge, &cell->site, nullptr));
+						halfEdges->insert(halfEdges->begin() + iLeft, halfEdgePool.newElement(edge, &cell->site, nullptr));
 						++nHalfEdges;
 					}
 				}
@@ -440,22 +436,22 @@ void Diagram::closeCells(BoundingBox bbox) {
 }
 
 void Diagram::finalize() {
+	cells.reserve(tmpCells.size());
 	for (Cell* c : tmpCells) {
 		cells.push_back(c);
 	}
-	cells.shrink_to_fit();
 	tmpCells.clear();
 
+	edges.reserve(tmpEdges.size());
 	for (Edge* e : tmpEdges) {
 		edges.push_back(e);
 	}
-	edges.shrink_to_fit();
 	tmpEdges.clear();
 
+	vertices.reserve(tmpVertices.size());
 	for (Point2* v : tmpVertices) {
 		vertices.push_back(v);
 	}
-	vertices.shrink_to_fit();
 	tmpVertices.clear();
 }
 

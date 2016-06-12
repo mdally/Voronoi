@@ -31,7 +31,6 @@ private:
 	Cell* createCell(Point2 site);
 	Edge* createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB);
 	Edge* createBorderEdge(Site* lSite, Point2* vertA, Point2* vertB);
-	HalfEdge* createHalfEdge(Edge* edge, Site* lSite, Site* rSite);
 
 	bool connectEdge(Edge* edge, BoundingBox bbox);
 	bool clipEdge(Edge* edge, BoundingBox bbox);

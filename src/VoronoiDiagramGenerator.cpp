@@ -54,7 +54,7 @@ Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBo
 
 	// main loop
 	for (;;) {
-		// we need to figure out whether to handle a site or circle event
+		// figure out whether to handle a site or circle event
 		// for this we find out if there is a site event and if it is
 		// 'earlier' than the circle event
 		circle = circleEventQueue->firstEvent;

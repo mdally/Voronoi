@@ -53,7 +53,7 @@ int main() {
 		10, 20, 30, 40, 50, 60, 70, 80, 90,
 		100, 200, 300, 400, 500, 600, 700, 800, 900,
 		1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
-		10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000//, 90000//, 100000
+		10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000
 	};
 	const int numTestsPerRun = 100;
 	double testRuns[numTests][numTestsPerRun];
@@ -67,8 +67,9 @@ int main() {
 		diagram = vdg.compute(*sites, bbox);
 		delete sites;
 
+		Diagram* oldDiagram;
 		for (int j = 0; j < numTestsPerRun; ++j) {
-			Diagram* oldDiagram = diagram;
+			oldDiagram = diagram;
 
 			start = clock();
 			diagram = vdg.relax();
@@ -79,30 +80,16 @@ int main() {
 			testRuns[i][j] = duration;
 		}
 
-		/*average = 0;
+		average = 0;
 		for (int j = 0; j < numTestsPerRun; ++j) {
 			average += testRuns[i][j];
 		}
 		average /= numTestsPerRun;
 
-		std::cout << "Lloyd's relaxation of " << std::setw(5) << testPointCounts[i] << " took " << average << "ms on average.\n";*/
-	}
-
-	for (int j = 0; j < numTests; ++j) {
-		std::cout << testPointCounts[j] << '\t';
-	}
-	std::cout << '\n';
-	for (int i = 0; i < numTestsPerRun; ++i) {
-		for (int j = 0; j < numTests; ++j) {
-			std::cout << testRuns[j][i] << '\t';
-		}
-		std::cout << '\n';
+		std::cout << "Lloyd's relaxation of " << std::setw(5) << testPointCounts[i] << " points took " << average << "ms on average.\n";
 	}
 
 	delete diagram;
 
-	//don't auto-close the window
-	char c;
-	std::cin >> c;
 	return 0;
 }
