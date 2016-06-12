@@ -1,5 +1,7 @@
 # Voronoi
+
 by Mark Dally
+
 https://github.com/mdally/Voronoi
 
 ================================================
@@ -11,9 +13,12 @@ Once compiled, all you need are the library file and the headers in the 'include
 
 ###Usage:
 //compute the diagram for set of sites and a bounding box
+
 VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox)
 
+
 //perform Lloyd's relaxation on the diagram last computed
+
 VoronoiDiagramGenerator::relax()
 
 ###Notes:
@@ -21,4 +26,4 @@ VoronoiDiagramGenerator::relax()
 	
  * Performing Lloyd's relaxation returns a new diagram but does not delete the original. You must delete the old one in order to avoid memory leaks.
 
- * The 'OpenGL_Example' program requires the static libraries for OpenGL, GLEW (glew.sourceforge.net), and GLFW (glfw.org). I have provided the win32 libraries for GLEW and GLFW which I compiled with the project, and only tested this example on Windows. So your mileage may vary for any other setup. Once you've run this program, you input the number of sites to use in the console window, and then provide relaxation commands to the OpenGL window.
+ * The 'OpenGL_Example' program requires the static libraries for OpenGL, [GLEW](glew.sourceforge.net), and [GLFW](glfw.org). I have provided the win32 libraries for GLEW and GLFW which I compiled with the project, and only tested this example on Windows. So your mileage may vary for any other setup. Once you've run this program, you input the number of sites to use in the console window, and then provide relaxation commands to the OpenGL window.
