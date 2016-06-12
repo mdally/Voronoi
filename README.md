@@ -12,9 +12,11 @@ Compile using either the Visual Studio project or the makefile.
 Once compiled, all you need are the library file and the headers in the 'include' forlder.
 
 ###Usage:
-VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox) //compute the diagram for set of sites and a bounding box
+//compute the diagram for set of sites and a bounding box
+```VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox)```
 
-VoronoiDiagramGenerator::relax() //perform Lloyd's relaxation on the diagram last computed
+//perform Lloyd's relaxation on the diagram last computed
+```VoronoiDiagramGenerator::relax()```
 
 ###Notes:
  * It is your responsibility to ensure that there are no duplicate sites or sites that fall outside or on the borders of the bounding box.
