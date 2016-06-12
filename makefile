@@ -3,14 +3,14 @@ CFLAGS = -std=c++0x -c -Wall -O3
 DEBUG = 
 ARFLAGS = -cvq
 LDFLAGS = 
-EXECUTABLE = bin/VoronoiDiagramGenerator
-SOURCES = main.cpp
+EXECUTABLE = bin/ConsoleExample
+SOURCES = examples/Console_Example.cpp
 LIBSOURCENAMES = BeachLine.cpp Cell.cpp CircleEventQueue.cpp Diagram.cpp Edge.cpp Point2.cpp Vector2.cpp VoronoiDiagramGenerator.cpp
 LIBSOURCEDIR = src/
 LIBSOURCES = $(addprefix $(LIBSOURCEDIR), $(LIBSOURCENAMES))
 OBJS = $(SOURCES:.cpp=.o)
 LIBOBJS = $(LIBSOURCES:.cpp=.o)
-LIB = $(EXECUTABLE).a
+LIB = bin/Voronoi.a
 
 all : $(SOURCES) $(LIB) $(EXECUTABLE)
 
