@@ -58,8 +58,7 @@ int main() {
 	const int numTestsPerRun = 100;
 	double testRuns[numTests][numTestsPerRun];
 
-	clock_t start;
-	double duration;
+	clock_t start, stop;
 	double average;
 	for (int i = 0; i < numTests; ++i) {
 		sites = new std::vector<Point2>();
@@ -73,11 +72,10 @@ int main() {
 
 			start = clock();
 			diagram = vdg.relax();
-			duration = 1000 * (std::clock() - start) / (double)CLOCKS_PER_SEC;
+			stop = clock();
+			testRuns[i][j] = 1000 * (stop - start) / (double)CLOCKS_PER_SEC;
 
 			delete oldDiagram;
-
-			testRuns[i][j] = duration;
 		}
 
 		average = 0;
