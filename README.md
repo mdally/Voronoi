@@ -12,7 +12,7 @@ Compile using either the Visual Studio project or the makefile.
 Once compiled, all you need are the library file and the headers in the 'include' forlder.
 
 ###Usage:
-//compute the diagram for set of sites and a bounding box
+//compute the diagram for a set of sites and a bounding box
 ```
 VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox)
 ```
