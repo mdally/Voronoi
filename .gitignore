@@ -1,10 +1,6 @@
-VS_junk/Console_Example/Release/Console_Example.tlog/Console_Example.lastbuildstate
-VS_junk/OpenGL_Example/Release/
-VS_junk/Voronoi/Release/
+*.lastbuildstate
 *.opendb
 *.sdf
-bin/Voronoi.lib
-VS_junk/Console_Example/Release/
-VS_junk/Console_Example/Debug/
-VS_junk/OpenGL_Example/Debug/
-VS_junk/Voronoi/Debug/
+*.lib
+*.tlog
+*.idb
