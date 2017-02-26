@@ -4,6 +4,7 @@
 #include "../src/RBTree.h"
 #include "../src/CircleEventQueue.h"
 #include "../src/BeachLine.h"
+#include "../src/Color.h"
 #include "Diagram.h"
 #include <vector>
 
@@ -23,12 +24,12 @@ public:
 	VoronoiDiagramGenerator() : circleEventQueue(nullptr), siteEventQueue(nullptr), beachLine(nullptr) {};
 	~VoronoiDiagramGenerator() {};
 
-	Diagram* compute(std::vector<Point2>& sites, BoundingBox bbox);
+	Diagram* compute(std::vector<std::pair<Point2,Color>>& sites, BoundingBox bbox);
 	Diagram* relax();
 private:
 	Diagram* diagram;
 	CircleEventQueue* circleEventQueue;
-	std::vector<Point2*>* siteEventQueue;
+	std::vector<std::pair<Point2,Color>*>* siteEventQueue;
 	BoundingBox	boundingBox;
 
 	void printBeachLine();

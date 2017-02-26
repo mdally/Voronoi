@@ -33,6 +33,9 @@
     <ClInclude Include="..\..\include\VoronoiDiagramGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\examples\OpenGL_Example.cpp">

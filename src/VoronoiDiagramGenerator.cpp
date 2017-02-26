@@ -18,24 +18,24 @@ void VoronoiDiagramGenerator::printBeachLine() {
 	cout << endl << endl;
 }
 
-bool pointComparator(Point2* a, Point2* b) {
-	double r = b->y - a->y;
+bool pointComparator(std::pair<Point2,Color>* a, std::pair<Point2,Color>* b) {
+	double r = b->first.y - a->first.y;
 	if (r < 0) return true;
 	else if (r == 0) {
-		if (b->x - a->x < 0) return true;
+		if (b->first.x - a->first.x < 0) return true;
 		else return false;
 	}
 	else return false;
 }
 
-Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox) {
-	siteEventQueue = new std::vector<Point2*>();
+Diagram* VoronoiDiagramGenerator::compute(std::vector<std::pair<Point2,Color>>& sites, BoundingBox bbox) {
+	siteEventQueue = new std::vector<std::pair<Point2,Color>*>();
 	boundingBox = bbox;
 
 	for (size_t i = 0; i < sites.size(); ++i) {
 		//sanitize sites by quantizing to integer multiple of epsilon
-		sites[i].x = round(sites[i].x / EPSILON)*EPSILON;
-		sites[i].y = round(sites[i].y / EPSILON)*EPSILON;
+		sites[i].first.x = round(sites[i].first.x / EPSILON)*EPSILON;
+		sites[i].first.y = round(sites[i].first.y / EPSILON)*EPSILON;
 
 		siteEventQueue->push_back(&(sites[i]));
 	}
@@ -48,7 +48,7 @@ Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBo
 	std::sort(siteEventQueue->begin(), siteEventQueue->end(), pointComparator);
 
 	// process queue
-	Point2* site = siteEventQueue->empty() ? nullptr : siteEventQueue->back();
+	std::pair<Point2,Color>* site = siteEventQueue->empty() ? nullptr : siteEventQueue->back();
 	if (!siteEventQueue->empty()) siteEventQueue->pop_back();
 	treeNode<CircleEvent>* circle;
 
@@ -60,7 +60,7 @@ Diagram* VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBo
 		circle = circleEventQueue->firstEvent;
 
 		// add beach section
-		if (site && (!circle || site->y < circle->data.y || (site->y == circle->data.y && site->x < circle->data.x))) {
+		if (site && (!circle || site->first.y < circle->data.y || (site->first.y == circle->data.y && site->first.x < circle->data.x))) {
 			// first create cell for new site
 			Cell* cell = diagram->createCell(*site);
 			// then create a beachsection for that site
@@ -108,7 +108,7 @@ bool halfEdgesCW(HalfEdge* e1, HalfEdge* e2) {
 }
 
 Diagram* VoronoiDiagramGenerator::relax() {
-	std::vector<Point2> sites;
+	std::vector<std::pair<Point2,Color>> sites;
 	std::vector<Point2> verts;
 	std::vector<Vector2> vectors;
 	//replace each site with its cell's centroid:
@@ -137,7 +137,7 @@ Diagram* VoronoiDiagramGenerator::relax() {
 		}
 		centroid.x /= totalArea;
 		centroid.y /= totalArea;
-		sites.push_back(centroid);
+		sites.push_back(std::pair<Point2,Color>(centroid,c->color));
 	}
 
 	//then recompute the diagram using the cells' centroids

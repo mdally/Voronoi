@@ -2,6 +2,7 @@
 #define _CELL_H_
 
 #include "Point2.h"
+#include "../src/Color.h"
 #include <vector>
 
 struct cellBoundingBox {
@@ -26,11 +27,12 @@ struct Site {
 struct HalfEdge;
 struct Cell {
 	Site site;
+	Color color;
 	std::vector<HalfEdge*> halfEdges;
 	bool closeMe;
 
 	Cell() : closeMe(false) {};
-	Cell(Point2 _site) : site(_site, this), closeMe(false) {};
+	Cell(std::pair<Point2,Color> _site) : site(_site.first, this), color(_site.second), closeMe(false) {};
 
 	std::vector<Cell*> getNeighbors();
 	cellBoundingBox getBoundingBox();

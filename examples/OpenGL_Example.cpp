@@ -1,11 +1,14 @@
 #include "../include/Point2.h"
 #include "../include/Vector2.h"
 #include "../include/VoronoiDiagramGenerator.h"
+#include "../src/Color.h"
 #include <vector>
 #include <ctime>
+#include <stdio.h>
 #include <iostream>
 #include <algorithm>
 #include <limits>
+#include <SOIL\SOIL.h>
 
 // GLEW
 #define GLEW_STATIC
@@ -15,7 +18,7 @@
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 // Window dimensions
-const GLuint WINDOW_WIDTH = 900, WINDOW_HEIGHT = 900;
+const GLuint WINDOW_WIDTH = 700, WINDOW_HEIGHT = 350;
 // Shaders
 const GLchar* vertexShaderSource =
 	"#version 330 core\n"
@@ -32,7 +35,8 @@ const GLchar* fragmentShaderSource =
 	"color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 	"}\n\0";
 double normalize(double in, int dimension) {
-	return in / (float)dimension*1.8 - 0.9;
+	//return in / (double)dimension*1.8 - 0.9;
+	return (in / (double)dimension*2.0 - 1.0);
 }
 //globals for use in giving relaxation commands
 int relax = 0;
@@ -54,6 +58,28 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+//Take a screenshot, save it as a .bmp to the Screenshots folder
+void takeScreenshot() {
+	static unsigned long int count = 1;
+
+	char screenshotFileName[100];
+	sprintf_s(
+		screenshotFileName,
+		"%s/%d.bmp",
+		"../screenshots",
+		count++
+	);
+
+	SOIL_save_screenshot(
+		screenshotFileName,
+		SOIL_SAVE_TYPE_BMP,
+		0,
+		0,
+		WINDOW_WIDTH,
+		WINDOW_HEIGHT
+	);
+}
+
 bool sitesOrdered(const Point2& s1, const Point2& s2) {
 	if (s1.y < s2.y)
 		return true;
@@ -63,8 +89,17 @@ bool sitesOrdered(const Point2& s1, const Point2& s2) {
 	return false;
 }
 
-void genRandomSites(std::vector<Point2>& sites, BoundingBox& bbox, unsigned int dimension, unsigned int numSites) {
-	bbox = BoundingBox(0, dimension, dimension, 0);
+void colorCorrect(float& r, float& g, float& b) {
+#define BASE 0.05f
+#define MULT 0.90f
+
+	r = r*MULT + BASE;
+	g = r*MULT + BASE;
+	b = 1.0f;
+}
+
+void genRandomSites(std::vector<std::pair<Point2,Color>>& sites, BoundingBox& bbox, unsigned int dimension, unsigned int numSites) {
+	bbox = BoundingBox(0, dimension, dimension/2.0, 0);
 	std::vector<Point2> tmpSites;
 
 	tmpSites.reserve(numSites);
@@ -75,15 +110,25 @@ void genRandomSites(std::vector<Point2>& sites, BoundingBox& bbox, unsigned int 
 	srand(std::clock());
 	for (unsigned int i = 0; i < numSites; ++i) {
 		s.x = 1 + (rand() / (double)RAND_MAX)*(dimension - 2);
-		s.y = 1 + (rand() / (double)RAND_MAX)*(dimension - 2);
+		s.y = 1 + (rand() / (double)RAND_MAX)*(dimension/2.0 - 2);
 		tmpSites.push_back(s);
 	}
 
 	//remove any duplicates that exist
 	std::sort(tmpSites.begin(), tmpSites.end(), sitesOrdered);
-	sites.push_back(tmpSites[0]);
+
+	float r = rand() / (float)RAND_MAX;
+	float g = rand() / (float)RAND_MAX;
+	float b = rand() / (float)RAND_MAX;
+	colorCorrect(r, g, b);
+	sites.push_back(std::pair<Point2,Color>(tmpSites[0],Color(r,g,b)));
 	for (Point2& s : tmpSites) {
-		if (s != sites.back()) sites.push_back(s);
+		r = rand() / (float)RAND_MAX;
+		g = rand() / (float)RAND_MAX;
+		b = rand() / (float)RAND_MAX;
+		colorCorrect(r, g, b);
+
+		if (s != sites.back().first) sites.push_back(std::pair<Point2,Color>(s, Color(r,g,b)));
 	}
 }
 
@@ -93,7 +138,7 @@ int main() {
 	VoronoiDiagramGenerator vdg = VoronoiDiagramGenerator();
 	Diagram* diagram = nullptr;
 	
-	std::vector<Point2>* sites;
+	std::vector<std::pair<Point2,Color>>* sites;
 	BoundingBox bbox;
 
 	// Init GLFW
@@ -111,8 +156,15 @@ int main() {
 	glewInit();
 	// Define the viewport dimensions
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	// Uncommenting this call will result in wireframe polygons.
+	//default background color
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+#define WIREFRAME 0
+#if WIREFRAME
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#else
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 
 	while (!glfwWindowShouldClose(window)) {
 		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
@@ -131,7 +183,7 @@ int main() {
 			startOver = false;
 			relaxForever = false;
 			relax = 0;
-			sites = new std::vector<Point2>();
+			sites = new std::vector<std::pair<Point2,Color>>();
 			std::cout << "How many points? ";
 			std::cin >> nPoints;
 			genRandomSites(*sites, bbox, dimension, nPoints);
@@ -144,26 +196,45 @@ int main() {
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glBegin(GL_POINTS);
+		//draw filled cells
+		unsigned int cellIdx = 0;
 		for (Cell* c : diagram->cells) {
-			Point2& p = c->site.p;
-			glVertex3d(normalize(p.x, dimension), -normalize(p.y, dimension), 0.0);
+			glBegin(GL_POLYGON);
+			glColor3f(c->color.r, c->color.g, c->color.b);
+			for (HalfEdge* e : c->halfEdges) {
+				Point2& p = *e->startPoint();
+				glVertex3d(normalize(p.x, dimension), -normalize(p.y, dimension / 2), 0.0);
+			}
+			glEnd();
 		}
-		glEnd();
 
+		//draw the edges
+		glColor3f(0.35f, 0.35f, 0.35f);
 		for (Edge* e : diagram->edges) {
-			if (e->vertA && e->vertB) {
+			if (e->vertA && e->vertB && e->lSite && e->rSite) {
 				glBegin(GL_LINES);
 				Point2& p1 = *e->vertA;
 				Point2& p2 = *e->vertB;
 
-				glVertex3d(normalize(p1[0], dimension), -normalize(p1[1], dimension), 0.0);
-				glVertex3d(normalize(p2[0], dimension), -normalize(p2[1], dimension), 0.0);
+				glVertex3d(normalize(p1[0], dimension), -normalize(p1[1], dimension / 2), 0.0);
+				glVertex3d(normalize(p2[0], dimension), -normalize(p2[1], dimension / 2), 0.0);
 				glEnd();
 			}
 		}
 
+		//draw the sites
+		glColor3f(0.0f, 0.0f, 0.0f);
+		glPointSize(2.0f);
+		glBegin(GL_POINTS);
+		for (Cell* c : diagram->cells) {
+			Point2& p = c->site.p;
+			glVertex3d(normalize(p.x, dimension), -normalize(p.y, dimension / 2), 0.0);
+		}
+		glEnd();
+
 		if (relax || relaxForever) {
+			takeScreenshot();
+
 			Diagram* prevDiagram = diagram;
 			start = std::clock();
 			diagram = vdg.relax();

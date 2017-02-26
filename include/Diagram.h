@@ -5,6 +5,7 @@
 //#include "../src/MemoryPool/C-98/MemoryPool.h" //You will need to use this version instead of the one above if your compiler doesn't handle C++11's noexcept operator
 #include "Edge.h"
 #include "Cell.h"
+#include "../src/Color.h"
 #include <set>
 
 struct BoundingBox;
@@ -28,7 +29,7 @@ private:
 	MemoryPool<Point2> vertexPool;
 
 	Point2* createVertex(double x, double y);
-	Cell* createCell(Point2 site);
+	Cell* createCell(std::pair<Point2,Color> site);
 	Edge* createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB);
 	Edge* createBorderEdge(Site* lSite, Point2* vertA, Point2* vertB);
 

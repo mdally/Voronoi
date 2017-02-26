@@ -13,7 +13,7 @@ Point2* Diagram::createVertex(double x, double y) {
 	return vert;
 }
 
-Cell* Diagram::createCell(Point2 site) {
+Cell* Diagram::createCell(std::pair<Point2,Color> site) {
 	Cell* cell = cellPool.newElement(site);
 	tmpCells.insert(cell);
 
