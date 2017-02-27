@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <limits>
+#include <fstream>
+#include <chrono>
 
 bool sitesOrdered(const Point2& s1, const Point2& s2) {
 	if (s1.y < s2.y)
@@ -48,21 +50,19 @@ int main() {
 	std::vector<Point2>* sites;
 	BoundingBox bbox;
 
-	const int numTests = 35;
-	int testPointCounts[numTests] = {
-		10, 20, 30, 40, 50, 60, 70, 80, 90,
-		100, 200, 300, 400, 500, 600, 700, 800, 900,
-		1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
-		10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000
-	};
+	const int numTests = 80;
 	const int numTestsPerRun = 100;
-	double testRuns[numTests][numTestsPerRun];
+	int64_t testRuns[numTests][numTestsPerRun];
 
-	clock_t start, stop;
+	std::ofstream outFile = std::ofstream();
+	outFile.open("test_data.txt");
+	outFile.clear();
+
+	std::chrono::time_point<std::chrono::steady_clock> start, stop;
 	double average;
 	for (int i = 0; i < numTests; ++i) {
 		sites = new std::vector<Point2>();
-		genRandomSites(*sites, bbox, 1000000, testPointCounts[i]);
+		genRandomSites(*sites, bbox, 1000000, 1000*(i+1));
 		diagram = vdg.compute(*sites, bbox);
 		delete sites;
 
@@ -70,22 +70,31 @@ int main() {
 		for (int j = 0; j < numTestsPerRun; ++j) {
 			oldDiagram = diagram;
 
-			start = clock();
+			start = std::chrono::high_resolution_clock::now();
 			diagram = vdg.relax();
-			stop = clock();
-			testRuns[i][j] = 1000 * (stop - start) / (double)CLOCKS_PER_SEC;
+			stop = std::chrono::high_resolution_clock::now();
+			testRuns[i][j] = (std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count());
 
 			delete oldDiagram;
 		}
+		delete diagram;
 
 		average = 0;
 		for (int j = 0; j < numTestsPerRun; ++j) {
 			average += testRuns[i][j];
 		}
 		average /= numTestsPerRun;
+		average /= 1000000;
 
-		std::cout << "Lloyd's relaxation of " << std::setw(5) << testPointCounts[i] << " points took " << average << "ms on average.\n";
+		std::cout << "Lloyd's relaxation of " << std::setw(5) << 1000 * (i + 1) << " points took " << average << "ms on average.\n";
+
+		outFile << 1000 * (i + 1) << "\t";
+		for (int j = 0; j < numTestsPerRun; ++j) {
+			outFile << (j != 0 ? "\t" : "") << testRuns[i][j];
+		}
+		outFile << std::endl;
 	}
+	outFile.close();
 
 	delete diagram;
 
