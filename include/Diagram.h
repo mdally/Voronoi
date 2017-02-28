@@ -14,6 +14,7 @@ public:
 	std::vector<Edge*> edges;
 	std::vector<Point2*> vertices;
 
+	~Diagram();
 	void printDiagram();
 private:
 	friend class VoronoiDiagramGenerator;
@@ -37,6 +38,12 @@ private:
 	void clipEdges(BoundingBox bbox);
 	void closeCells(BoundingBox bbox);
 	void finalize();
+
+	template <typename T>
+	void freeVecMemory(T& t) {
+		T tmp;
+		t.swap(tmp);
+	}
 };
 
 #endif

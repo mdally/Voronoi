@@ -50,7 +50,7 @@ int main() {
 	std::vector<Point2>* sites;
 	BoundingBox bbox;
 
-	const int numTests = 80;
+	const int numTests = 100;
 	const int numTestsPerRun = 100;
 	int64_t testRuns[numTests][numTestsPerRun];
 
@@ -61,23 +61,18 @@ int main() {
 	std::chrono::time_point<std::chrono::steady_clock> start, stop;
 	double average;
 	for (int i = 0; i < numTests; ++i) {
-		sites = new std::vector<Point2>();
-		genRandomSites(*sites, bbox, 1000000, 1000*(i+1));
-		diagram = vdg.compute(*sites, bbox);
-		delete sites;
-
-		Diagram* oldDiagram;
 		for (int j = 0; j < numTestsPerRun; ++j) {
-			oldDiagram = diagram;
+			sites = new std::vector<Point2>();
+			genRandomSites(*sites, bbox, 100, 1000 * (i + 1));
 
 			start = std::chrono::high_resolution_clock::now();
-			diagram = vdg.relax();
+			diagram = vdg.compute(*sites, bbox);
 			stop = std::chrono::high_resolution_clock::now();
 			testRuns[i][j] = (std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count());
 
-			delete oldDiagram;
+			delete diagram;
+			delete sites;
 		}
-		delete diagram;
 
 		average = 0;
 		for (int j = 0; j < numTestsPerRun; ++j) {
@@ -86,7 +81,7 @@ int main() {
 		average /= numTestsPerRun;
 		average /= 1000000;
 
-		std::cout << "Lloyd's relaxation of " << std::setw(5) << 1000 * (i + 1) << " points took " << average << "ms on average.\n";
+		std::cout << "Computing diagram of " << std::setw(5) << 1000 * (i + 1) << " points took " << average << "ms on average.\n";
 
 		outFile << 1000 * (i + 1) << "\t";
 		for (int j = 0; j < numTestsPerRun; ++j) {
@@ -95,8 +90,6 @@ int main() {
 		outFile << std::endl;
 	}
 	outFile.close();
-
-	delete diagram;
 
 	return 0;
 }

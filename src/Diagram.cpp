@@ -6,6 +6,12 @@
 using std::cout;
 using std::endl;
 
+Diagram::~Diagram() {
+	for (Cell* c : cells) {
+		freeVecMemory(c->halfEdges);
+	}
+}
+
 Point2* Diagram::createVertex(double x, double y) {
 	Point2* vert = vertexPool.newElement(Point2(x, y));
 	tmpVertices.insert(vert);
