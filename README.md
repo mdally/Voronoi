@@ -4,14 +4,14 @@ by Mark Dally
 
 https://github.com/mdally/Voronoi
 
-================================================
+---------------------------------------------------
 
 A simple library for computing Voronoi diagrams using Fortune's algorithm and performing Lloyd's relaxation.
 
 Compile using either the Visual Studio project or the makefile.
 Once compiled, all you need are the library file and the headers in the 'include' forlder.
 
-###Usage:
+### Usage:
 //compute the diagram for a set of sites and a bounding box
 ```
 VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox)
@@ -22,7 +22,7 @@ VoronoiDiagramGenerator::compute(std::vector<Point2>& sites, BoundingBox bbox)
 VoronoiDiagramGenerator::relax()
 ```
 
-###Notes:
+### Notes:
  * It is your responsibility to ensure that there are no duplicate sites or sites that fall outside or on the borders of the bounding box.
 	
  * Performing Lloyd's relaxation returns a new diagram but does not delete the original. You must delete the old one in order to avoid memory leaks.
