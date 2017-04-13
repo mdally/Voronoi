@@ -6,7 +6,7 @@ https://github.com/mdally/Voronoi
 
 ---------------------------------------------------
 
-A simple C++ library for computing Voronoi diagrams using Fortune's algorithm and performing Lloyd's relaxation.
+A C++ library for computing Voronoi diagrams using Fortune's algorithm and performing Lloyd's relaxation.
 
 Compile using either the Visual Studio project or the makefile.
 Once compiled, all you need are the library file and the headers in the 'include' forlder.
