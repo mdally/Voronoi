@@ -3,34 +3,42 @@
 #include <algorithm>
 #include <limits>
 
+inline void Cell::addHalfEdge(HalfEdge* he) {
+	HalfEdge* cur = halfEdges;
+	while (cur->next) {
+		cur = cur->next;
+	}
+
+	cur->next = he;
+}
+
 std::vector<Cell*> Cell::getNeighbors() {
 	std::vector<Cell*> neighbors;
-	Edge* e;
 
-	size_t edgeCount = halfEdges.size();
-	while (edgeCount--) {
-		e = halfEdges[edgeCount]->edge;
-		if (e->lSite && e->lSite != &site) {
-			neighbors.push_back(this);
-		}
-		else if (e->rSite && e->rSite != &site) {
-			neighbors.push_back(this);
-		}
-	}
+	HalfEdge* firstEdge = halfEdges;
+	HalfEdge* curEdge = firstEdge;
+	
+	do {
+		if((curEdge->edge->lSite && curEdge->edge->rSite) || (curEdge->edge->rSite && curEdge->site != &site))
+			neighbors.push_back(curEdge->site->cell);
+		curEdge = curEdge->next;
+	} while (curEdge != firstEdge);
 
 	return neighbors;
 }
 
 cellBoundingBox Cell::getBoundingBox() {
-	size_t edgeCount = halfEdges.size();
 	double xmin = std::numeric_limits<double>::infinity();
 	double ymin = xmin;
 	double xmax = -xmin;
 	double ymax = xmax;
 
+	HalfEdge* firstEdge = halfEdges;
+	HalfEdge* curEdge = firstEdge;
+
 	Point2* vert;
-	while (edgeCount--) {
-		vert = halfEdges[edgeCount]->startPoint();
+	do {
+		vert = curEdge->startPoint();
 
 		double vx = vert->x;
 		double vy = vert->y;
@@ -39,7 +47,9 @@ cellBoundingBox Cell::getBoundingBox() {
 		if (vy < ymin) ymin = vy;
 		if (vx > xmax) xmax = vx;
 		if (vy > ymax) ymax = vy;
-	}
+
+		curEdge = curEdge->next;
+	} while (firstEdge != curEdge);
 
 	return cellBoundingBox(xmin, ymin, xmax, ymax);
 }
@@ -62,16 +72,16 @@ int Cell::pointIntersection(double x, double y) {
 	//   "if it is less than 0 then P is to the right of the line segment,
 	//   "if greater than 0 it is to the left, if equal to 0 then it lies
 	//   "on the line segment"
-	HalfEdge* he;
-	size_t edgeCount = halfEdges.size();
 	Point2 p0;
 	Point2 p1;
 	double r;
 
-	while (edgeCount--) {
-		he = halfEdges[edgeCount];
-		p0 = *he->startPoint();
-		p1 = *he->endPoint();
+	HalfEdge* firstEdge = halfEdges;
+	HalfEdge* curEdge = firstEdge;
+
+	do {
+		p0 = *curEdge->startPoint();
+		p1 = *curEdge->endPoint();
 		r = (y - p0.y)*(p1.x - p0.x) - (x - p0.x)*(p1.y - p0.y);
 
 		if (r == 0) {
@@ -80,7 +90,9 @@ int Cell::pointIntersection(double x, double y) {
 		if (r > 0) {
 			return -1;
 		}
-	}
+
+		curEdge = curEdge->next;
+	} while (firstEdge != curEdge);
 	return 1;
 }
 

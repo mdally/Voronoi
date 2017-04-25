@@ -50,44 +50,30 @@ int main() {
 	std::vector<Point2>* sites;
 	BoundingBox bbox;
 
-	const int numTests = 100;
-	const int numTestsPerRun = 100;
-	int64_t testRuns[numTests][numTestsPerRun];
+	const int numTests = 5;
+	const int maxSites = 3000000;
 
 	std::ofstream outFile = std::ofstream();
 	outFile.open("test_data.txt");
 	outFile.clear();
 
 	std::chrono::time_point<std::chrono::steady_clock> start, stop;
-	double average;
 	for (int i = 0; i < numTests; ++i) {
-		for (int j = 0; j < numTestsPerRun; ++j) {
-			sites = new std::vector<Point2>();
-			genRandomSites(*sites, bbox, 100, 1000 * (i + 1));
+		sites = new std::vector<Point2>();
 
-			start = std::chrono::high_resolution_clock::now();
-			diagram = vdg.compute(*sites, bbox);
-			stop = std::chrono::high_resolution_clock::now();
-			testRuns[i][j] = (std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count());
+		unsigned int nSites = maxSites; // (unsigned int)round((rand() / (double)RAND_MAX)*(maxSites - 2)) + 2u;
+		genRandomSites(*sites, bbox, 100000, nSites);
 
-			delete diagram;
-			delete sites;
-		}
+		start = std::chrono::high_resolution_clock::now();
+		diagram = vdg.compute(*sites, bbox);
+		stop = std::chrono::high_resolution_clock::now();
+		int64_t durationNS = (std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count());
 
-		average = 0;
-		for (int j = 0; j < numTestsPerRun; ++j) {
-			average += testRuns[i][j];
-		}
-		average /= numTestsPerRun;
-		average /= 1000000;
+		delete diagram;
+		delete sites;
 
-		std::cout << "Computing diagram of " << std::setw(5) << 1000 * (i + 1) << " points took " << average << "ms on average.\n";
-
-		outFile << 1000 * (i + 1) << "\t";
-		for (int j = 0; j < numTestsPerRun; ++j) {
-			outFile << (j != 0 ? "\t" : "") << testRuns[i][j];
-		}
-		outFile << std::endl;
+		std::cout << nSites << "\t" << durationNS << std::endl;
+		outFile << nSites << "\t" << durationNS << std::endl;
 	}
 	outFile.close();
 

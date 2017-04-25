@@ -33,8 +33,8 @@ Edge* Diagram::createEdge(Site* lSite, Site* rSite, Point2* vertA, Point2* vertB
 	if (vertA) edge->setStartPoint(lSite, rSite, vertA);
 	if (vertB) edge->setEndPoint(lSite, rSite, vertB);
 
-	lSite->cell->halfEdges.push_back(halfEdgePool.newElement(edge, lSite, rSite));
-	rSite->cell->halfEdges.push_back(halfEdgePool.newElement(edge, rSite, lSite));
+	lSite->cell->addHalfEdge(halfEdgePool.newElement(edge, lSite, rSite));
+	rSite->cell->addHalfEdge(halfEdgePool.newElement(edge, rSite, lSite));
 
 	return edge;
 }

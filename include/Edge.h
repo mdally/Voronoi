@@ -22,9 +22,10 @@ struct Edge {
 struct HalfEdge {
 	Site* site;
 	Edge* edge;
+	HalfEdge* next;
 	double angle;
 
-	HalfEdge() : site(nullptr), edge(nullptr) {};
+	HalfEdge() : site(nullptr), edge(nullptr), next(nullptr) {};
 	HalfEdge(Edge* e, Site* lSite, Site* rSite);
 
 	inline Point2* startPoint();

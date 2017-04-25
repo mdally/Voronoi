@@ -26,11 +26,14 @@ struct Site {
 struct HalfEdge;
 struct Cell {
 	Site site;
-	std::vector<HalfEdge*> halfEdges;
+	//std::vector<HalfEdge*> halfEdges;
+	HalfEdge* halfEdges;
 	bool closeMe;
 
 	Cell() : closeMe(false) {};
 	Cell(Point2 _site) : site(_site, this), closeMe(false) {};
+
+	inline void addHalfEdge(HalfEdge* he);
 
 	std::vector<Cell*> getNeighbors();
 	cellBoundingBox getBoundingBox();
