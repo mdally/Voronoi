@@ -9,7 +9,7 @@ https://github.com/mdally/Voronoi
 A C++ library for computing bounded Voronoi diagrams using Fortune's algorithm and performing Lloyd's relaxation.
 
 Compile using either the Visual Studio project or the makefile.
-Once compiled, all you need are the library file and the headers in the 'include' forlder.
+Once compiled, all you need are the library file and the headers in the 'include' folder.
 
 ### Usage:
 //compute the diagram for a set of sites and a bounding box
