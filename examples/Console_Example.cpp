@@ -54,11 +54,11 @@ int main() {
 	const int numTestsPerRun = 100;
 	int64_t testRuns[numTests][numTestsPerRun];
 
-	std::ofstream outFile = std::ofstream();
+	std::ofstream outFile;
 	outFile.open("test_data.txt");
 	outFile.clear();
 
-	std::chrono::time_point<std::chrono::steady_clock> start, stop;
+	std::chrono::time_point<std::chrono::high_resolution_clock> start, stop;
 	double average;
 	for (int i = 0; i < numTests; ++i) {
 		for (int j = 0; j < numTestsPerRun; ++j) {
